@@ -2,12 +2,13 @@ import { storage } from "@/core/storage/StorageManager";
 import { StorageKeys } from "@/core/storage/storageKeys";
 import { dayKey } from "@/core/utils/time";
 import { DayPrayerTimes, ObligatoryPrayer } from "@/features/prayerTimes/prayerTimes.types";
+import { ModeCheckFn } from "@/features/modes/mode.types";
 import { AlarmManager } from "./AlarmManager";
 import { InAppAlarmScheduler } from "./InAppAlarmScheduler";
 
 export interface AlarmSyncOptions {
   isAlertEnabled: (prayer: ObligatoryPrayer) => boolean;
-  resolveMode: (prayer: ObligatoryPrayer) => import("@/features/modes/mode.types").SalahMode;
+  isModeEnabled: ModeCheckFn;
   soundName?: string;
 }
 
@@ -34,7 +35,7 @@ export class AlarmScheduler {
         if (!entry.isObligatory) continue;
         const prayer = entry.slot as ObligatoryPrayer;
         if (!options.isAlertEnabled(prayer)) continue;
-        if (options.resolveMode(prayer) !== "alarm") continue;
+        if (!options.isModeEnabled(prayer, "alarm")) continue;
         if (entry.time.getTime() <= Date.now()) continue;
 
         const id = `prayer-${prayer}-${dayKey(entry.time)}`;

@@ -7,8 +7,8 @@ import { useAlertPrefs } from "@/features/notifications/alertPrefsStore";
 
 interface PrayerListProps {
   day: DayPrayerTimes;
-  /** Slots the user has already logged as prayed today. */
   completed?: Partial<Record<PrayerSlot, boolean>>;
+  allNamazComplete?: boolean;
   showBells?: boolean;
   onPressPrayer?: (slot: PrayerSlot) => void;
 }
@@ -17,6 +17,7 @@ interface PrayerListProps {
 export function PrayerList({
   day,
   completed = {},
+  allNamazComplete = false,
   showBells = true,
   onPressPrayer,
 }: PrayerListProps) {
@@ -31,7 +32,9 @@ export function PrayerList({
           label={entry.label}
           time={entry.time}
           state={rowStateFor(entry.slot, entry.time, day.currentSlot)}
+          isNext={entry.slot === day.nextSlot}
           completed={completed[entry.slot]}
+          allNamazComplete={allNamazComplete}
           showBell={showBells && entry.isObligatory}
           bellOn={entry.isObligatory ? alerts[entry.slot as ObligatoryPrayer] : false}
           onToggleBell={

@@ -11,7 +11,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="index" options={{ title: "Today" }} />
       <Tabs.Screen name="timetable" options={{ title: "Times" }} />
       <Tabs.Screen name="qibla" options={{ title: "Qibla" }} />
-      <Tabs.Screen name="history" options={{ title: "Streaks" }} />
+      <Tabs.Screen name="history" options={{ title: "Progress" }} />
       <Tabs.Screen name="settings" options={{ title: "Settings" }} />
     </Tabs>
   );

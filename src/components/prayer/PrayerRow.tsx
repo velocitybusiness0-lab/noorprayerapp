@@ -7,6 +7,7 @@ import { ThemedText } from "@/components/primitives/ThemedText";
 import { formatClock } from "@/core/utils/time";
 import { PrayerSlot } from "@/features/prayerTimes/prayerTimes.types";
 import { SLOT_ICON } from "./slotIcons";
+import { PrayerRowBackground } from "./PrayerRowBackground";
 
 export type RowState = "past" | "current" | "upcoming";
 
@@ -15,7 +16,9 @@ interface PrayerRowProps {
   label: string;
   time: Date;
   state: RowState;
+  isNext?: boolean;
   completed?: boolean;
+  allNamazComplete?: boolean;
   showBell?: boolean;
   bellOn?: boolean;
   onToggleBell?: () => void;
@@ -28,80 +31,101 @@ export function PrayerRow({
   label,
   time,
   state,
+  isNext = false,
   completed = false,
+  allNamazComplete = false,
   showBell = false,
   bellOn = false,
   onToggleBell,
   onPress,
 }: PrayerRowProps) {
   const theme = useTheme();
-  const emphasized = state === "current";
-  const dim = state === "past";
+  const highlighted = isNext && !allNamazComplete;
+  const dim = state === "past" && !isNext && !allNamazComplete;
+  const specialRow = isNext || slot === "sunrise" || slot === "maghrib";
+  const showGreen = allNamazComplete && slot !== "sunrise";
 
-  const nameColor = emphasized
-    ? "textPrimary"
-    : dim
-      ? "textTertiary"
-      : "textSecondary";
+  const nameColor = allNamazComplete && slot !== "sunrise"
+    ? "accent"
+    : highlighted
+      ? "accent"
+      : dim
+        ? "textSecondary"
+        : "textPrimary";
+
+  const iconColor =
+    allNamazComplete && slot !== "sunrise"
+      ? theme.colors.accent
+      : highlighted
+        ? theme.colors.accent
+        : dim
+          ? theme.colors.textSecondary
+          : theme.colors.textSecondary;
+
+  const timeColor = allNamazComplete && slot !== "sunrise"
+    ? "accent"
+    : highlighted
+      ? "accent"
+      : dim
+        ? "textSecondary"
+        : "textPrimary";
 
   return (
-    <Pressable
-      onPress={() => {
-        if (!onPress) return;
-        haptics.selection();
-        onPress();
-      }}
-      style={[
-        styles.row,
-        { borderBottomColor: theme.colors.hairline },
-        emphasized && {
-          backgroundColor: theme.colors.sageMuted,
-          borderRadius: theme.radii.md,
-        },
-      ]}
-    >
-      <View style={styles.left}>
-        <Ionicons
-          name={SLOT_ICON[slot]}
-          size={emphasized ? 22 : 18}
-          color={emphasized ? theme.colors.accent : theme.colors.textTertiary}
-        />
-        <ThemedText
-          variant={emphasized ? "heading" : "body"}
-          color={nameColor}
-        >
-          {label}
-        </ThemedText>
-        {completed && (
-          <Ionicons name="checkmark-circle" size={16} color={theme.colors.success} />
-        )}
-      </View>
-
-      <View style={styles.right}>
-        <ThemedText
-          variant={emphasized ? "heading" : "body"}
-          color={dim ? "textTertiary" : "textPrimary"}
-        >
-          {formatClock(time)}
-        </ThemedText>
-        {showBell && (
-          <Pressable
-            hitSlop={10}
-            onPress={() => {
-              if (!onToggleBell) return;
-              haptics.selection();
-              onToggleBell();
-            }}
+    <PrayerRowBackground slot={slot} isNext={isNext} completedGreen={showGreen}>
+      <Pressable
+        onPress={() => {
+          if (!onPress) return;
+          haptics.selection();
+          onPress();
+        }}
+        style={[
+          styles.row,
+          !specialRow && { borderBottomColor: theme.colors.hairline, borderBottomWidth: StyleSheet.hairlineWidth },
+        ]}
+      >
+        <View style={styles.left}>
+          <Ionicons
+            name={SLOT_ICON[slot]}
+            size={highlighted || allNamazComplete ? 22 : 18}
+            color={iconColor}
+          />
+          <ThemedText
+            variant={highlighted || (allNamazComplete && slot !== "sunrise") ? "heading" : "body"}
+            color={nameColor}
           >
-            <Ionicons
-              name={bellOn ? "notifications" : "notifications-off-outline"}
-              size={18}
-              color={bellOn ? theme.colors.accent : theme.colors.textTertiary}
-            />
-          </Pressable>
-        )}
-      </View>
-    </Pressable>
+            {label}
+          </ThemedText>
+          {(completed || allNamazComplete) && slot !== "sunrise" && (
+            <Ionicons name="checkmark-circle" size={16} color={theme.colors.accent} />
+          )}
+        </View>
+
+        <View style={styles.right}>
+          <ThemedText
+            variant={highlighted || (allNamazComplete && slot !== "sunrise") ? "heading" : "body"}
+            color={timeColor}
+          >
+            {formatClock(time)}
+          </ThemedText>
+          {showBell && (
+            <Pressable
+              hitSlop={10}
+              onPress={() => {
+                if (!onToggleBell) return;
+                haptics.selection();
+                onToggleBell();
+              }}
+            >
+              <Ionicons
+                name={bellOn ? "notifications" : "notifications-off-outline"}
+                size={18}
+                color={bellOn ? theme.colors.accent : theme.colors.textTertiary}
+              />
+            </Pressable>
+          )}
+        </View>
+      </Pressable>
+    </PrayerRowBackground>
   );
 }
 
@@ -112,7 +136,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: 14,
     paddingHorizontal: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   left: { flexDirection: "row", alignItems: "center", gap: 12 },
   right: { flexDirection: "row", alignItems: "center", gap: 14 },

@@ -1,6 +1,11 @@
 import { RowState } from "@/components/prayer/PrayerRow";
 import { PrayerSlot } from "./prayerTimes.types";
 
+/** True once the adhan time for this slot has arrived (or passed). */
+export function canLogPrayer(time: Date, now: Date = new Date()): boolean {
+  return time.getTime() <= now.getTime();
+}
+
 /** Derives whether a prayer slot is past, current, or upcoming. */
 export function rowStateFor(
   slot: PrayerSlot,

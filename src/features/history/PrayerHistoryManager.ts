@@ -50,6 +50,10 @@ export class PrayerHistoryManager {
     ]);
   }
 
+  async clearAll(): Promise<void> {
+    await this.db.run(`DELETE FROM prayer_log;`);
+  }
+
   async slotsForDay(key: string): Promise<ObligatoryPrayer[]> {
     const rows = await this.db.all<LogRow>(
       `SELECT * FROM prayer_log WHERE day_key = ?;`,
@@ -93,6 +97,48 @@ export class PrayerHistoryManager {
       prayedAt: r.prayed_at,
       source: r.source as PrayerSource,
     }));
+  }
+
+  /** Full-year completion map pulled from the entire prayer log. */
+  async completionsForYear(year: number): Promise<DayCompletion[]> {
+    const byDay = await this.loadDayMap();
+    const start = new Date(year, 0, 1);
+    const end = new Date(year, 11, 31);
+    return this.buildRangeFromMap(byDay, start, end);
+  }
+
+  private async loadDayMap(): Promise<Map<string, ObligatoryPrayer[]>> {
+    const rows = await this.db.all<LogRow>(`SELECT * FROM prayer_log ORDER BY day_key DESC;`);
+    const byDay = new Map<string, ObligatoryPrayer[]>();
+    for (const row of rows) {
+      const list = byDay.get(row.day_key) ?? [];
+      list.push(row.slot as ObligatoryPrayer);
+      byDay.set(row.day_key, list);
+    }
+    return byDay;
+  }
+
+  private buildRangeFromMap(
+    byDay: Map<string, ObligatoryPrayer[]>,
+    start: Date,
+    end: Date
+  ): DayCompletion[] {
+    const result: DayCompletion[] = [];
+    const cursor = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+    const endDate = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+
+    while (cursor <= endDate) {
+      const key = dayKey(cursor);
+      const prayed = byDay.get(key) ?? [];
+      result.push({
+        dayKey: key,
+        prayed,
+        complete: prayed.length >= OBLIGATORY_COUNT,
+      });
+      cursor.setDate(cursor.getDate() + 1);
+    }
+
+    return result;
   }
 }
 

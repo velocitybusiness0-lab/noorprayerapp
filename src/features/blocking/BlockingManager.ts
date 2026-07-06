@@ -2,7 +2,7 @@ import { storage } from "@/core/storage/StorageManager";
 import { StorageKeys } from "@/core/storage/storageKeys";
 import { dayKey } from "@/core/utils/time";
 import { DayPrayerTimes, ObligatoryPrayer } from "@/features/prayerTimes/prayerTimes.types";
-import { SalahMode } from "@/features/modes/mode.types";
+import { ModeCheckFn } from "@/features/modes/mode.types";
 import { isExpoGo } from "@/core/runtime/isExpoGo";
 
 type DeviceActivityModule = typeof import("react-native-device-activity");
@@ -31,7 +31,7 @@ export const BLOCK_SELECTION_ID = "noor.blockedApps";
 
 export interface BlockingSyncOptions {
   isAlertEnabled: (prayer: ObligatoryPrayer) => boolean;
-  resolveMode: (prayer: ObligatoryPrayer) => SalahMode;
+  isModeEnabled: ModeCheckFn;
 }
 
 /**
@@ -109,7 +109,7 @@ export class BlockingManager {
         if (!entry.isObligatory) continue;
         const prayer = entry.slot as ObligatoryPrayer;
         if (!options.isAlertEnabled(prayer)) continue;
-        if (options.resolveMode(prayer) !== "block") continue;
+        if (!options.isModeEnabled(prayer, "block")) continue;
         if (entry.time.getTime() <= Date.now()) continue;
 
         const activityName = `block-${prayer}-${dayKey(entry.time)}`;

@@ -1,23 +1,25 @@
 import React from "react";
 import { Screen } from "@/components/primitives/Screen";
 import { ThemedText } from "@/components/primitives/ThemedText";
-import { StreakSummaryCard } from "@/components/history/StreakSummaryCard";
 import { CompletionHeatmap } from "@/components/history/CompletionHeatmap";
-import { RewardCard } from "@/components/history/RewardCard";
+import { PlayerProgressCard } from "@/components/history/PlayerProgressCard";
+import { StreakSummaryCard } from "@/components/history/StreakSummaryCard";
+import { WeeklyNamazChart } from "@/components/history/WeeklyNamazChart";
 import { useHistory } from "@/features/history/historyStore";
 
 export default function HistoryScreen() {
-  const { streak, reward, completions } = useHistory();
+  const { streak, progress, completions } = useHistory();
 
   return (
     <Screen scroll tabBarPadding>
-      <ThemedText variant="title">Streaks</ThemedText>
+      <ThemedText variant="title">Progress</ThemedText>
       <ThemedText variant="body" color="textSecondary">
-        Keep every day complete to grow your streak.
+        Tick namaz on Today to earn XP and level up.
       </ThemedText>
 
-      <StreakSummaryCard streak={streak} />
-      <RewardCard reward={reward} />
+      <StreakSummaryCard streak={streak} totalNamaz={progress.totalNamaz} />
+      <PlayerProgressCard progress={progress} />
+      <WeeklyNamazChart completions={completions} />
       <CompletionHeatmap completions={completions} />
     </Screen>
   );

@@ -8,23 +8,28 @@ import { StreakSummary } from "@/features/history/history.types";
 
 interface StreakSummaryCardProps {
   streak: StreakSummary;
+  totalNamaz: number;
 }
 
-/** Hero stats: current streak, longest streak, and today's 0..5 progress. */
-export function StreakSummaryCard({ streak }: StreakSummaryCardProps) {
+/** Hero stats: current streak, longest streak, and lifetime namaz count. */
+export function StreakSummaryCard({ streak, totalNamaz }: StreakSummaryCardProps) {
   const theme = useTheme();
+  const heroBg = theme.isDark ? "rgba(240, 188, 104, 0.12)" : "transparent";
+
   return (
     <Card style={styles.card}>
-      <View style={styles.main}>
-        <Ionicons name="flame" size={30} color={theme.colors.warmGlow} />
-        <ThemedText variant="display">{streak.current}</ThemedText>
-        <ThemedText variant="caption" color="textTertiary">
+      <View style={[styles.main, { backgroundColor: heroBg, borderRadius: theme.radii.md }]}>
+        <Ionicons name="flame" size={34} color={theme.colors.warmGlow} />
+        <ThemedText variant="display" color="textPrimary">
+          {streak.current}
+        </ThemedText>
+        <ThemedText variant="caption" color="textSecondary" style={styles.streakLabel}>
           DAY STREAK
         </ThemedText>
       </View>
       <View style={[styles.divider, { backgroundColor: theme.colors.hairline }]} />
       <View style={styles.stats}>
-        <Stat label="Today" value={`${streak.todayCount}/5`} />
+        <Stat label="Namaz" value={totalNamaz.toLocaleString()} />
         <Stat label="Longest" value={`${streak.longest}`} />
       </View>
     </Card>
@@ -34,8 +39,10 @@ export function StreakSummaryCard({ streak }: StreakSummaryCardProps) {
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <View style={styles.stat}>
-      <ThemedText variant="heading">{value}</ThemedText>
-      <ThemedText variant="caption" color="textTertiary">
+      <ThemedText variant="heading" color="textPrimary">
+        {value}
+      </ThemedText>
+      <ThemedText variant="caption" color="textSecondary">
         {label}
       </ThemedText>
     </View>
@@ -44,7 +51,8 @@ function Stat({ label, value }: { label: string; value: string }) {
 
 const styles = StyleSheet.create({
   card: { marginTop: 16, alignItems: "center" },
-  main: { alignItems: "center", gap: 2, paddingVertical: 8 },
+  main: { alignItems: "center", gap: 2, paddingVertical: 12, paddingHorizontal: 24 },
+  streakLabel: { letterSpacing: 1.1, marginTop: 2 },
   divider: { height: StyleSheet.hairlineWidth, alignSelf: "stretch", marginVertical: 16 },
   stats: { flexDirection: "row", justifyContent: "space-around", alignSelf: "stretch" },
   stat: { alignItems: "center", gap: 2 },

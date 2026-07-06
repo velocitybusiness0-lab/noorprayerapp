@@ -22,6 +22,7 @@ function RootNavigator() {
         }}
       >
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="history/year" options={{ animation: "slide_from_right" }} />
         <Stack.Screen name="alarm/ring" options={{ presentation: "fullScreenModal" }} />
         <Stack.Screen name="scan/[purpose]" options={{ presentation: "fullScreenModal" }} />
         <Stack.Screen name="onboarding/index" options={{ presentation: "modal" }} />

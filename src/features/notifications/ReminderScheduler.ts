@@ -1,5 +1,5 @@
 import { DayPrayerTimes, ObligatoryPrayer } from "@/features/prayerTimes/prayerTimes.types";
-import { SalahMode } from "@/features/modes/mode.types";
+import { ModeCheckFn } from "@/features/modes/mode.types";
 import {
   NotificationCategories,
   NotificationManager,
@@ -10,7 +10,7 @@ const FOLLOW_UP_MINUTES = 15;
 
 export interface ReminderSyncOptions {
   isAlertEnabled: (prayer: ObligatoryPrayer) => boolean;
-  resolveMode: (prayer: ObligatoryPrayer) => SalahMode;
+  isModeEnabled: ModeCheckFn;
   /** Slots already logged today are skipped for follow-ups. */
   isLogged?: (prayer: ObligatoryPrayer) => boolean;
 }
@@ -31,9 +31,7 @@ export class ReminderScheduler {
       const prayer = entry.slot as ObligatoryPrayer;
       if (!options.isAlertEnabled(prayer)) continue;
 
-      const mode = options.resolveMode(prayer);
-
-      if (mode === "reminder") {
+      if (options.isModeEnabled(prayer, "reminder")) {
         await this.notifications.scheduleAt(entry.time, {
           title: entry.label,
           body: reminderMessage(prayer),

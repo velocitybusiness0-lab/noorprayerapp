@@ -26,5 +26,9 @@ export const SALAH_MODE_ICON: Record<SalahMode, string> = {
   reminder: "notifications",
 };
 
+export const ALL_SALAH_MODES: SalahMode[] = ["alarm", "block", "reminder"];
+
 /** Optional per-prayer overrides of the global mode. */
 export type PerPrayerModes = Partial<Record<ObligatoryPrayer, SalahMode>>;
+
+export type ModeCheckFn = (prayer: ObligatoryPrayer, mode: SalahMode) => boolean;

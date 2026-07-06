@@ -1,50 +1,80 @@
-import React from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
   StyleSheet,
   useWindowDimensions,
-  View,
 } from "react-native";
-import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Screen } from "@/components/primitives/Screen";
 import { ThemedText } from "@/components/primitives/ThemedText";
 import { Button } from "@/components/primitives/Button";
 import { Card } from "@/components/primitives/Card";
 import { HomeHeader } from "@/components/home/HomeHeader";
-import { SunPathArc } from "@/components/home/SunPathArc";
 import { NextPrayerArcCard } from "@/components/home/NextPrayerArcCard";
 import { PrayerList } from "@/components/prayer/PrayerList";
+import { DailyGoalsSection } from "@/components/today/DailyGoalsSection";
+import { NamazCompletionCelebration } from "@/components/celebration/NamazCompletionCelebration";
+import { SalahModePickerModal } from "@/components/modes/SalahModePickerModal";
 import { useTheme } from "@/core/theme";
 import { haptics } from "@/core/haptics/HapticsManager";
-import { spacing } from "@/core/theme/spacing";
 import { usePrayerTimes } from "@/features/prayerTimes/usePrayerTimes";
 import { useModes } from "@/features/modes/modeStore";
-import { SALAH_MODE_ICON, SALAH_MODE_LABELS } from "@/features/modes/mode.types";
+import { formatEnabledModesSummary } from "@/features/modes/modeFormat";
 import { useHistory } from "@/features/history/historyStore";
-import { ObligatoryPrayer, PrayerSlot } from "@/features/prayerTimes/prayerTimes.types";
+import { useDailyGoals } from "@/features/dailyGoals/dailyGoalsStore";
+import { canLogPrayer } from "@/features/prayerTimes/prayerSelectors";
+import { OBLIGATORY_PRAYERS, ObligatoryPrayer, PrayerSlot } from "@/features/prayerTimes/prayerTimes.types";
+
+const NAMAZ_TARGET = 5;
 
 export default function TodayScreen() {
   const theme = useTheme();
   const { width } = useWindowDimensions();
   const { loading, error, location, today, countdownMs, refresh } = usePrayerTimes();
-  const globalMode = useModes((s) => s.global);
+  const enabledModes = useModes((s) => s.enabledModes);
   const { streak, todaySlots, toggle } = useHistory();
+  const syncNamazPrayed = useDailyGoals((s) => s.syncNamazPrayed);
+  const [modePickerVisible, setModePickerVisible] = useState(false);
+  const [celebrationVisible, setCelebrationVisible] = useState(false);
+  const prevNamazCount = useRef(todaySlots.length);
 
-  const sunrise = today?.entries.find((e) => e.slot === "sunrise")?.time;
-  const sunset = today?.entries.find((e) => e.slot === "maghrib")?.time;
+  const allNamazComplete = todaySlots.length >= NAMAZ_TARGET;
 
   const completed = todaySlots.reduce<Partial<Record<PrayerSlot, boolean>>>(
     (acc, slot) => ({ ...acc, [slot]: true }),
     {}
   );
 
+  useEffect(() => {
+    syncNamazPrayed(todaySlots.length);
+  }, [todaySlots.length, syncNamazPrayed]);
+
+  useEffect(() => {
+    if (todaySlots.length === NAMAZ_TARGET && prevNamazCount.current < NAMAZ_TARGET) {
+      setCelebrationVisible(true);
+    }
+    prevNamazCount.current = todaySlots.length;
+  }, [todaySlots.length]);
+
   const onPressPrayer = (slot: PrayerSlot) => {
     if (slot === "sunrise") return;
+    if (!OBLIGATORY_PRAYERS.includes(slot as ObligatoryPrayer)) return;
+
+    const entry = today?.entries.find((e) => e.slot === slot);
+    const alreadyLogged = todaySlots.includes(slot as ObligatoryPrayer);
+    if (entry && !alreadyLogged && !canLogPrayer(entry.time)) {
+      haptics.warning();
+      return;
+    }
+
     haptics.success();
     void toggle(slot as ObligatoryPrayer);
   };
+
+  const dismissCelebration = useCallback(() => {
+    setCelebrationVisible(false);
+  }, []);
 
   return (
     <Screen scroll tabBarPadding>
@@ -65,59 +95,45 @@ export default function TodayScreen() {
 
       {today && (
         <>
-          {sunrise && sunset && (
-            <View style={styles.sun}>
-              <SunPathArc sunrise={sunrise} sunset={sunset} width={width - spacing.lg * 2} />
-            </View>
-          )}
-
           <NextPrayerArcCard day={today} countdownMs={countdownMs} width={width} />
 
           <ModePill
-            label={SALAH_MODE_LABELS[globalMode]}
-            icon={SALAH_MODE_ICON[globalMode] as keyof typeof Ionicons.glyphMap}
+            label={formatEnabledModesSummary(enabledModes)}
+            onPress={() => {
+              haptics.selection();
+              setModePickerVisible(true);
+            }}
           />
 
-          {globalMode !== "reminder" && today.nextSlot && today.nextSlot !== "sunrise" && (
-            <Button
-              label="Heading to the masjid? Pre-disarm"
-              variant="ghost"
-              onPress={() => {
-                haptics.selection();
-                router.push(`/scan/predisarm?slot=${today.nextSlot}`);
-              }}
-              style={styles.predisarm}
-            />
-          )}
+          <SalahModePickerModal
+            visible={modePickerVisible}
+            onClose={() => setModePickerVisible(false)}
+          />
 
           <Card padded={false} style={styles.list}>
             <PrayerList
               day={today}
               showBells
               completed={completed}
+              allNamazComplete={allNamazComplete}
               onPressPrayer={onPressPrayer}
             />
           </Card>
+
+          <DailyGoalsSection />
+
+          <NamazCompletionCelebration visible={celebrationVisible} onFinished={dismissCelebration} />
         </>
       )}
     </Screen>
   );
 }
 
-function ModePill({
-  label,
-  icon,
-}: {
-  label: string;
-  icon: keyof typeof Ionicons.glyphMap;
-}) {
+function ModePill({ label, onPress }: { label: string; onPress: () => void }) {
   const theme = useTheme();
   return (
     <Pressable
-      onPress={() => {
-        haptics.selection();
-        router.push("/settings");
-      }}
+      onPress={onPress}
       style={[
         styles.pill,
         {
@@ -127,11 +143,11 @@ function ModePill({
         },
       ]}
     >
-      <Ionicons name={icon} size={16} color={theme.colors.accent} />
+      <Ionicons name="options-outline" size={16} color={theme.colors.accent} />
       <ThemedText variant="caption" color="textSecondary">
         {`Mode: ${label}`}
       </ThemedText>
-      <Ionicons name="chevron-forward" size={14} color={theme.colors.textTertiary} />
+      <Ionicons name="chevron-down" size={14} color={theme.colors.textTertiary} />
     </Pressable>
   );
 }
@@ -140,7 +156,6 @@ const styles = StyleSheet.create({
   loader: { marginTop: 60 },
   block: { marginTop: 24 },
   retry: { marginTop: 16 },
-  sun: { marginTop: 12, marginBottom: 4 },
   list: { marginTop: 16, paddingHorizontal: 8 },
   pill: {
     marginTop: 16,
@@ -152,5 +167,4 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderWidth: StyleSheet.hairlineWidth,
   },
-  predisarm: { marginTop: 4 },
 });

@@ -12,6 +12,7 @@ export const StorageKeys = {
   highLatitudeRule: "prayer.highLatitudeRule",
   lastKnownLocation: "location.last",
   globalMode: "modes.global",
+  enabledModes: "modes.enabled",
   perPrayerModes: "modes.perPrayer",
   selectedAlarmSound: "alarm.selectedSound",
   alarmScheduledIds: "alarm.scheduledIds",
@@ -20,6 +21,7 @@ export const StorageKeys = {
   savedMosques: "masjid.saved",
   preDisarmedSlots: "masjid.preDisarmed",
   notificationsEnabled: "notifications.enabled",
+  dailyGoals: "dailyGoals.snapshot",
 } as const;
 
 export type StorageKey = (typeof StorageKeys)[keyof typeof StorageKeys];

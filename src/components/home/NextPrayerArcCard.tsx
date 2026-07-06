@@ -1,8 +1,7 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import Svg, { Circle, Path } from "react-native-svg";
+import Svg, { Path } from "react-native-svg";
 import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/core/theme";
 import { Card } from "@/components/primitives/Card";
 import { ThemedText } from "@/components/primitives/ThemedText";
@@ -11,6 +10,8 @@ import { formatCountdown, progressBetween } from "@/core/utils/time";
 import { PRAYER_LABELS } from "@/features/prayerTimes/prayerTimes.types";
 import { rowStateFor } from "@/features/prayerTimes/prayerSelectors";
 import { DayPrayerTimes } from "@/features/prayerTimes/prayerTimes.types";
+import { PrayerArcGeometry } from "@/components/home/PrayerArcGeometry";
+import { PrayerArcNode, PrayerArcNodeState } from "@/components/home/PrayerArcNode";
 
 interface NextPrayerArcCardProps {
   day: DayPrayerTimes;
@@ -18,36 +19,34 @@ interface NextPrayerArcCardProps {
   width: number;
 }
 
-const HEIGHT = 180;
-const NODE = 26;
+const TRACK_WIDTH = 2;
+const ACTIVE_WIDTH = 7;
+const TOP_INSET = 32;
+const BOTTOM_INSET = 28;
 
-/** Hero card: an arc of prayer nodes with the live countdown in the centre. */
+/** Hero card: Athan-style semicircle with thick progress and prayer nodes. */
 export function NextPrayerArcCard({ day, countdownMs, width }: NextPrayerArcCardProps) {
   const theme = useTheme();
   const inner = width - theme.spacing.lg * 2;
-  const pad = 28;
+  const pad = 32;
   const radius = (inner - pad * 2) / 2;
   const cx = inner / 2;
-  const cy = HEIGHT - 44;
+  const cy = TOP_INSET + radius;
+  const height = cy + BOTTOM_INSET;
+  const geometry = new PrayerArcGeometry(cx, cy, radius);
 
-  const pointAt = (f: number) => {
-    const theta = Math.PI - f * Math.PI;
-    return { x: cx + radius * Math.cos(theta), y: cy - radius * Math.sin(theta) };
-  };
-
-  const entries = day.entries;
-  const n = entries.length;
+  const arcEntries = day.entries.filter((entry) => entry.isObligatory);
+  const n = arcEntries.length;
   const progress = progressBetween(
-    entries[0].time.getTime(),
-    entries[n - 1].time.getTime(),
+    arcEntries[0].time.getTime(),
+    arcEntries[n - 1].time.getTime(),
     Date.now()
   );
 
-  const trackPath = `M ${cx - radius} ${cy} A ${radius} ${radius} 0 0 1 ${cx + radius} ${cy}`;
-  const activePath = buildActivePath(progress, pointAt);
-  const dot = pointAt(progress);
-
+  const trackPath = geometry.fullTrackPath();
+  const activePath = geometry.activeTrackPath(progress);
   const nextLabel = day.nextSlot ? PRAYER_LABELS[day.nextSlot].toUpperCase() : "";
+  const labelTop = cy - radius * 0.42;
 
   return (
     <Card translucent={false} style={styles.card}>
@@ -57,84 +56,89 @@ export function NextPrayerArcCard({ day, countdownMs, width }: NextPrayerArcCard
         end={{ x: 1, y: 1 }}
         style={[styles.gradient, { borderRadius: theme.radii.lg }]}
       >
-      <View style={{ width: inner, height: HEIGHT }}>
-        <Svg width={inner} height={HEIGHT}>
-          <Path d={trackPath} stroke={theme.colors.arcTrack} strokeWidth={2} fill="none" />
-          {activePath && (
-            <Path d={activePath} stroke={theme.colors.arcActive} strokeWidth={2.5} fill="none" />
-          )}
-          <Circle cx={dot.x} cy={dot.y} r={4} fill={theme.colors.arcActive} />
-        </Svg>
-
-        {entries.map((entry, i) => {
-          const f = i / (n - 1);
-          const p = pointAt(f);
-          const state = rowStateFor(entry.slot, entry.time, day.currentSlot);
-          const active = state === "current" || entry.slot === day.nextSlot;
-          return (
-            <View
-              key={entry.slot}
-              style={[
-                styles.node,
-                { left: p.x - NODE / 2, top: p.y - NODE / 2, width: NODE, height: NODE },
-              ]}
-            >
-              <Ionicons
-                name={SLOT_ICON[entry.slot]}
-                size={16}
-                color={active ? theme.colors.accent : theme.colors.textTertiary}
+        <View style={{ width: inner, height }}>
+          <Svg width={inner} height={height}>
+            <Path
+              d={trackPath}
+              stroke={theme.colors.arcTrack}
+              strokeWidth={TRACK_WIDTH}
+              strokeLinecap="round"
+              fill="none"
+            />
+            {activePath && (
+              <Path
+                d={activePath}
+                stroke={theme.colors.arcActive}
+                strokeWidth={ACTIVE_WIDTH}
+                strokeLinecap="round"
+                fill="none"
               />
-            </View>
-          );
-        })}
+            )}
+          </Svg>
 
-        <View style={styles.center} pointerEvents="none">
-          <ThemedText variant="caption" color="textTertiary">
-            {`${nextLabel} PRAYER`}
-          </ThemedText>
-          <ThemedText variant="display" style={styles.countdown}>
-            {formatCountdown(countdownMs)}
-          </ThemedText>
+          {arcEntries.map((entry, i) => {
+            const f = n > 1 ? i / (n - 1) : 0;
+            const p = geometry.pointAt(f);
+            const rowState = rowStateFor(entry.slot, entry.time, day.currentSlot);
+            const nodeState = toNodeState(rowState, entry.slot === day.nextSlot);
+
+            return (
+              <PrayerArcNode
+                key={entry.slot}
+                icon={SLOT_ICON[entry.slot]}
+                x={p.x}
+                y={p.y}
+                state={nodeState}
+              />
+            );
+          })}
+
+          <View style={[styles.center, { top: labelTop }]} pointerEvents="none">
+            <ThemedText variant="caption" color="textSecondary" style={styles.label}>
+              {`${nextLabel} PRAYER`}
+            </ThemedText>
+            <ThemedText variant="display" style={styles.countdown}>
+              {formatCountdown(countdownMs)}
+            </ThemedText>
+          </View>
         </View>
-      </View>
       </LinearGradient>
     </Card>
   );
 }
 
-function buildActivePath(
-  progress: number,
-  pointAt: (f: number) => { x: number; y: number }
-): string | null {
-  if (progress <= 0) return null;
-  const steps = Math.max(2, Math.round(progress * 40));
-  let d = "";
-  for (let i = 0; i <= steps; i++) {
-    const f = (i / steps) * progress;
-    const { x, y } = pointAt(f);
-    d += `${i === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)} `;
-  }
-  return d.trim();
+function toNodeState(
+  rowState: ReturnType<typeof rowStateFor>,
+  isNext: boolean
+): PrayerArcNodeState {
+  if (rowState === "past") return "past";
+  if (rowState === "current" || isNext) return "current";
+  return "upcoming";
 }
 
 const styles = StyleSheet.create({
-  card: { alignItems: "center", padding: 0, overflow: "hidden" },
+  card: { alignItems: "center", padding: 0, overflow: "visible" },
   gradient: {
     alignItems: "center",
-    paddingVertical: 16,
+    paddingTop: 12,
+    paddingBottom: 10,
     paddingHorizontal: 16,
     width: "100%",
   },
-  node: {
-    position: "absolute",
-    alignItems: "center",
-    justifyContent: "center",
-  },
   center: {
-    ...StyleSheet.absoluteFillObject,
+    position: "absolute",
+    left: 0,
+    right: 0,
     alignItems: "center",
-    justifyContent: "center",
-    top: 30,
   },
-  countdown: { fontVariant: ["tabular-nums"], marginTop: 2 },
+  label: {
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+  },
+  countdown: {
+    fontVariant: ["tabular-nums"],
+    marginTop: 2,
+    fontSize: 38,
+    letterSpacing: -0.5,
+  },
 });

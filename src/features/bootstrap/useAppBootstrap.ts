@@ -16,10 +16,12 @@ import { setUnblockHandler } from "@/features/scan/scanActions";
 import { useMasjid } from "@/features/masjidMode/masjidStore";
 import { usePreDisarm } from "@/features/masjidMode/preDisarmStore";
 import { useHistory } from "@/features/history/historyStore";
+import { useDailyGoals } from "@/features/dailyGoals/dailyGoalsStore";
 import { widgetBridge } from "@/features/widgets/WidgetBridge";
 import { liveActivityManager } from "@/features/widgets/LiveActivityManager";
 import { widgetSnapshotBuilder } from "@/features/widgets/WidgetSnapshotBuilder";
 import { ObligatoryPrayer } from "@/features/prayerTimes/prayerTimes.types";
+import { SalahMode } from "@/features/modes/mode.types";
 
 const coordinator = new ModeCoordinator(
   new ReminderScheduler(notificationManager),
@@ -35,9 +37,7 @@ const coordinator = new ModeCoordinator(
 export function useAppBootstrap(): void {
   useNotificationSetup();
   const { today, location, manager } = usePrayerTimes();
-  const global = useModes((s) => s.global);
-  const perPrayer = useModes((s) => s.perPrayer);
-  const resolveFor = useModes((s) => s.resolveFor);
+  const enabledModes = useModes((s) => s.enabledModes);
   const { alerts, isEnabled } = useAlertPrefs();
   const selectedSoundId = useAlarmSound((s) => s.selectedId);
   const masjidEnabled = useMasjid((s) => s.enabled);
@@ -47,6 +47,7 @@ export function useAppBootstrap(): void {
 
   useEffect(() => {
     void useHistory.getState().init();
+    useDailyGoals.getState().init();
     setUnblockHandler(() => blockingManager.unblockNow());
     if (alarmManager.isSupported) void alarmManager.requestAuthorization();
     if (blockingManager.isAvailable) void blockingManager.requestAuthorization();
@@ -64,13 +65,13 @@ export function useAppBootstrap(): void {
     void liveActivityManager.sync(snapshot);
   }, [today]);
 
-  const resolveEffectiveMode = useCallback(
-    (prayer: ObligatoryPrayer) => {
-      if (masjidEnabled && atMosque) return "reminder";
-      if (usePreDisarm.getState().isPreDisarmed(prayer)) return "reminder";
-      return resolveFor(prayer);
+  const isModeEnabled = useCallback(
+    (prayer: ObligatoryPrayer, mode: SalahMode) => {
+      if (masjidEnabled && atMosque) return mode === "reminder";
+      if (usePreDisarm.getState().isPreDisarmed(prayer)) return mode === "reminder";
+      return enabledModes.includes(mode);
     },
-    [masjidEnabled, atMosque, resolveFor]
+    [enabledModes, masjidEnabled, atMosque]
   );
 
   useEffect(() => {
@@ -81,10 +82,10 @@ export function useAppBootstrap(): void {
 
     void coordinator.sync([today, tomorrow], {
       isAlertEnabled: isEnabled,
-      resolveMode: resolveEffectiveMode,
+      isModeEnabled,
       isLogged: (prayer) => useHistory.getState().isLogged(prayer),
       soundName: soundById(selectedSoundId).fileName,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [today, location, manager, global, perPrayer, alerts, selectedSoundId, masjidEnabled, atMosque, preDisarmFlags]);
+  }, [today, location, manager, enabledModes, alerts, selectedSoundId, masjidEnabled, atMosque, preDisarmFlags]);
 }

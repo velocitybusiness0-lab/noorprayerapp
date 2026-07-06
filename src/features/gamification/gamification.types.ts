@@ -1,23 +1,38 @@
-export interface Badge {
+export interface RankGoal {
   id: string;
   label: string;
-  description: string;
   icon: string;
-  unlocked: boolean;
+  current: number;
+  target: number;
 }
 
-export interface RewardProgress {
+export interface PlayerProgress {
   level: number;
   levelTitle: string;
-  /** Lifetime obligatory prayers logged. */
-  totalPrayers: number;
-  /** Prayers remaining until the next level (0 at max). */
-  toNextLevel: number;
-  badges: Badge[];
+  nextRankTitle?: string;
+  totalNamaz: number;
+  xp: number;
+  xpForCurrentLevel: number;
+  xpForNextLevel: number;
+  xpToNextLevel: number;
+  progressRatio: number;
+  rankGoals: RankGoal[];
 }
 
-export interface RewardInput {
+export interface SlotCounts {
+  fajr: number;
+  dhuhr: number;
+  asr: number;
+  maghrib: number;
+  isha: number;
+}
+
+export interface PlayerProgressInput {
+  totalNamaz: number;
+  quranSessions: number;
+  activeDays: number;
+  perfectDays: number;
   currentStreak: number;
   longestStreak: number;
-  totalPrayers: number;
+  slotCounts: SlotCounts;
 }

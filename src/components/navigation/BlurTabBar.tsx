@@ -99,7 +99,7 @@ function labelFor(routeName: string): string {
     case "qibla":
       return "Qibla";
     case "history":
-      return "Streaks";
+      return "Progress";
     case "settings":
       return "Settings";
     default:

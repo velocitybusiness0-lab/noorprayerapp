@@ -26,7 +26,7 @@ export class InAppAlarmScheduler {
         if (!entry.isObligatory) continue;
         const prayer = entry.slot as ObligatoryPrayer;
         if (!options.isAlertEnabled(prayer)) continue;
-        if (options.resolveMode(prayer) !== "alarm") continue;
+        if (!options.isModeEnabled(prayer, "alarm")) continue;
 
         const msUntil = entry.time.getTime() - Date.now();
         if (msUntil <= 0) continue;

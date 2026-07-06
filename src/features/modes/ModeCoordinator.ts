@@ -2,11 +2,11 @@ import { DayPrayerTimes, ObligatoryPrayer } from "@/features/prayerTimes/prayerT
 import { ReminderScheduler } from "@/features/notifications/ReminderScheduler";
 import { AlarmScheduler } from "@/features/alarm/AlarmScheduler";
 import { BlockingManager } from "@/features/blocking/BlockingManager";
-import { SalahMode } from "./mode.types";
+import { ModeCheckFn } from "./mode.types";
 
 export interface CoordinatorSyncOptions {
   isAlertEnabled: (prayer: ObligatoryPrayer) => boolean;
-  resolveMode: (prayer: ObligatoryPrayer) => SalahMode;
+  isModeEnabled: ModeCheckFn;
   isLogged: (prayer: ObligatoryPrayer) => boolean;
   soundName?: string;
 }
@@ -28,20 +28,20 @@ export class ModeCoordinator {
     if (today) {
       await this.reminders.syncForDay(today, {
         isAlertEnabled: options.isAlertEnabled,
-        resolveMode: options.resolveMode,
+        isModeEnabled: options.isModeEnabled,
         isLogged: options.isLogged,
       });
     }
 
     await this.alarms.sync(days, {
       isAlertEnabled: options.isAlertEnabled,
-      resolveMode: options.resolveMode,
+      isModeEnabled: options.isModeEnabled,
       soundName: options.soundName,
     });
 
     await this.blocking.scheduleForDays(days, {
       isAlertEnabled: options.isAlertEnabled,
-      resolveMode: options.resolveMode,
+      isModeEnabled: options.isModeEnabled,
     });
   }
 }

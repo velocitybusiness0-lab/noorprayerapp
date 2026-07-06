@@ -32,6 +32,10 @@ export interface ColorPalette {
   warmGlow: string;
   heroGradientStart: string;
   heroGradientEnd: string;
+  sunriseGradientStart: string;
+  sunriseGradientEnd: string;
+  sunsetGradientStart: string;
+  sunsetGradientEnd: string;
 }
 
 export const lightColors: ColorPalette = {
@@ -59,32 +63,40 @@ export const lightColors: ColorPalette = {
   warmGlow: "#D4A574",
   heroGradientStart: "#D8EDE4",
   heroGradientEnd: "#E4E0F0",
+  sunriseGradientStart: "#FFF4E0",
+  sunriseGradientEnd: "#FFD898",
+  sunsetGradientStart: "#FFD4B8",
+  sunsetGradientEnd: "#E8B8D8",
 };
 
-/** Soft dusk — still calm, never harsh black. */
+/** Soft dusk navy — cool blue base with harmonized surfaces and accents. */
 export const darkColors: ColorPalette = {
   background: "#2A3140",
-  backgroundElevated: "#343D4F",
-  surface: "#3A4456",
-  surfaceTranslucent: "rgba(58,68,86,0.72)",
-  border: "rgba(168,200,220,0.18)",
-  hairline: "rgba(240,237,232,0.1)",
-  textPrimary: "#F0EDE8",
-  textSecondary: "#B8B4AC",
-  textTertiary: "#8A8680",
+  backgroundElevated: "#323B4D",
+  surface: "#3C465A",
+  surfaceTranslucent: "rgba(60,70,90,0.82)",
+  border: "rgba(160,190,215,0.15)",
+  hairline: "rgba(220,228,240,0.09)",
+  textPrimary: "#E6EAEF",
+  textSecondary: "#A0A8B8",
+  textTertiary: "#707888",
   textInverse: "#2A3140",
-  accent: "#8BBFA8",
-  onAccent: "#2A3140",
-  success: "#9AD4B4",
-  danger: "#E0A098",
-  overlay: "rgba(20,24,32,0.55)",
-  arcTrack: "rgba(139,191,168,0.22)",
-  arcActive: "#8BBFA8",
-  sageMuted: "rgba(107,158,136,0.28)",
-  sand: "#4A4538",
-  sky: "#6A8AA8",
-  lavender: "#7A7090",
-  warmGlow: "#C99860",
-  heroGradientStart: "#3A4A52",
-  heroGradientEnd: "#3D3A50",
+  accent: "#82C4A8",
+  onAccent: "#1E2836",
+  success: "#94D4B8",
+  danger: "#D89890",
+  overlay: "rgba(18,22,30,0.58)",
+  arcTrack: "rgba(130,196,168,0.38)",
+  arcActive: "#82C4A8",
+  sageMuted: "rgba(130,196,168,0.28)",
+  sand: "#404858",
+  sky: "#7098B8",
+  lavender: "#7888A8",
+  warmGlow: "#F0BC68",
+  heroGradientStart: "#3A4858",
+  heroGradientEnd: "#424A62",
+  sunriseGradientStart: "#4A4458",
+  sunriseGradientEnd: "#8A6838",
+  sunsetGradientStart: "#5A3040",
+  sunsetGradientEnd: "#483868",
 };

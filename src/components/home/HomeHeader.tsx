@@ -1,14 +1,14 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { ThemedText } from "@/components/primitives/ThemedText";
-import { StreakBadge } from "./StreakBadge";
+import { StreakBadge } from "@/components/home/StreakBadge";
 
 interface HomeHeaderProps {
   locationName?: string;
   streakCount: number;
 }
 
-/** Top of the home screen: date + place on the left, streak pill on the right. */
+/** Top of the home screen: date, location, and streak badge. */
 export function HomeHeader({ locationName, streakCount }: HomeHeaderProps) {
   const now = new Date();
   const dateLabel = now.toLocaleDateString([], {
@@ -19,7 +19,7 @@ export function HomeHeader({ locationName, streakCount }: HomeHeaderProps) {
 
   return (
     <View style={styles.row}>
-      <View style={styles.left}>
+      <View style={styles.textBlock}>
         <ThemedText variant="heading">{dateLabel}</ThemedText>
         <ThemedText variant="caption" color="textTertiary">
           {locationName ?? "Locating..."}
@@ -35,6 +35,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     justifyContent: "space-between",
+    marginBottom: 16,
   },
-  left: { flex: 1, gap: 2 },
+  textBlock: { flex: 1, gap: 2, paddingRight: 12 },
 });

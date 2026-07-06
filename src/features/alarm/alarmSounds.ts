@@ -1,0 +1,31 @@
+/**
+ * Registry of selectable alarm sounds.
+ *
+ * `fileName` refers to an audio file bundled in the app (AlarmKit reads the
+ * sound from the main bundle or Library/Sounds by name). Drop the matching
+ * files into `assets/sounds/` and register them here. `undefined` uses the
+ * default system alarm sound.
+ *
+ * See `assets/sounds/README.md` for royalty-free sources.
+ */
+export interface AlarmSound {
+  id: string;
+  label: string;
+  /** Bundled file name incl. extension, or undefined for the system sound. */
+  fileName?: string;
+}
+
+export const ALARM_SOUNDS: AlarmSound[] = [
+  { id: "system", label: "System default" },
+  { id: "adhan_makkah", label: "Adhan (Makkah)", fileName: "adhan_makkah.caf" },
+  { id: "adhan_madinah", label: "Adhan (Madinah)", fileName: "adhan_madinah.caf" },
+  { id: "takbir", label: "Takbir", fileName: "takbir.caf" },
+  { id: "soft_chime", label: "Soft chime", fileName: "soft_chime.caf" },
+  { id: "gentle_bells", label: "Gentle bells", fileName: "gentle_bells.caf" },
+];
+
+export const DEFAULT_ALARM_SOUND_ID = "adhan_makkah";
+
+export function soundById(id: string): AlarmSound {
+  return ALARM_SOUNDS.find((s) => s.id === id) ?? ALARM_SOUNDS[0];
+}

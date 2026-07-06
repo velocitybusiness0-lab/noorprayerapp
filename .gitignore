@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+prayer-app/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native
+ios/
+android/
+
+# Metro
+.metro-health-check*
+
+# Env & secrets
+.env
+.env.local
+*.p8
+*.p12
+*.mobileprovision
+
+# macOS / editors
+.DS_Store
+*.log
+npm-debug.*
+yarn-error.*
+
+# Build artifacts
+*.jks
+*.orig.*

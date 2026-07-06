@@ -1,0 +1,89 @@
+{
+  "expo": {
+    "name": "Noor",
+    "slug": "noor-prayer-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "noor",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "icon": "./assets/images/icon.png",
+    "splash": {
+      "image": "./assets/images/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#F7F4EF"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.noor.prayerapp",
+      "appleTeamId": "REPLACE_WITH_APPLE_TEAM_ID",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Noor uses your location to calculate accurate prayer times and qibla direction.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Noor uses your location in the background to detect when you are at a mosque so it can adjust alarms and reminders.",
+        "NSMotionUsageDescription": "Noor uses the compass and motion sensors to show an accurate qibla direction.",
+        "NSCameraUsageDescription": "Noor uses the camera so you can scan your prayer mat, sink, or the mosque to confirm you are ready for salah.",
+        "NSAlarmKitUsageDescription": "Noor schedules prominent alarms at prayer times so you never miss a salah.",
+        "UIBackgroundModes": ["location", "fetch", "remote-notification"]
+      },
+      "entitlements": {
+        "com.apple.developer.family-controls": true,
+        "com.apple.security.application-groups": ["group.com.noor.prayerapp"]
+      }
+    },
+    "android": {
+      "package": "com.noor.prayerapp",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#F7F4EF"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-splash-screen",
+      "expo-font",
+      "expo-sqlite",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "16.4"
+          }
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Noor uses your location to detect when you are at a mosque and to keep prayer times accurate."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#6B9E88"
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Noor uses the camera so you can scan your prayer mat, sink, or the mosque to confirm you are ready for salah."
+        }
+      ],
+      [
+        "react-native-device-activity",
+        {
+          "appleTeamId": "REPLACE_WITH_APPLE_TEAM_ID",
+          "appGroup": "group.com.noor.prayerapp"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      }
+    }
+  }
+}

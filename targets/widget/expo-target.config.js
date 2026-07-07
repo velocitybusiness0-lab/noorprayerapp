@@ -4,7 +4,7 @@ module.exports = (config) => ({
   name: "Widget",
   bundleIdentifier: "insiders.miraj.Widget",
   icon: "../../assets/images/icon.png",
-  deploymentTarget: "16.4",
+  deploymentTarget: "17.0",
   frameworks: ["SwiftUI", "WidgetKit", "ActivityKit"],
   entitlements: {
     "com.apple.security.application-groups": ["group.insiders.miraj"],

@@ -60,7 +60,7 @@ export class InAppAlarmScheduler {
     const id = await Notifications.scheduleNotificationAsync({
       content: {
         title: `${label} • Time to pray`,
-        body: "Open Noor to scan and dismiss your smart alarm.",
+        body: "Open Miraj to scan and dismiss your smart alarm.",
         sound: true,
         priority: Notifications.AndroidNotificationPriority.MAX,
         categoryIdentifier: SmartAlarmNotificationCategory,

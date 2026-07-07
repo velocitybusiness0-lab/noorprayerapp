@@ -1,7 +1,7 @@
 import Foundation
 
 /// App group shared with the main app; JS writes the snapshot here.
-let appGroupId = "group.com.noor.prayerapp"
+let appGroupId = "group.insiders.miraj"
 let snapshotKey = "prayerSnapshot"
 
 /// One prayer row shown in the widget.

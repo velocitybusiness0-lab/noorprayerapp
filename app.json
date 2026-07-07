@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "Noor",
+    "name": "Miraj",
     "slug": "noor-prayer-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "scheme": "noor",
+    "scheme": "miraj",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "icon": "./assets/images/icon.png",
@@ -15,27 +15,33 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.noor.prayerapp",
-      "appleTeamId": "REPLACE_WITH_APPLE_TEAM_ID",
+      "bundleIdentifier": "insiders.miraj",
+      "appleTeamId": "BU2Z46QKJJ",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Noor uses your location to calculate accurate prayer times and qibla direction.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "Noor uses your location in the background to detect when you are at a mosque so it can adjust alarms and reminders.",
-        "NSMotionUsageDescription": "Noor uses the compass and motion sensors to show an accurate qibla direction.",
-        "NSCameraUsageDescription": "Noor uses the camera so you can scan your prayer mat, sink, or the mosque to confirm you are ready for salah.",
-        "NSAlarmKitUsageDescription": "Noor schedules prominent alarms at prayer times so you never miss a salah.",
-        "UIBackgroundModes": ["location", "fetch", "remote-notification"]
+        "NSLocationWhenInUseUsageDescription": "Miraj uses your location to calculate accurate prayer times and qibla direction.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Miraj uses your location in the background to detect when you are at a mosque so it can adjust alarms and reminders.",
+        "NSMotionUsageDescription": "Miraj uses the compass and motion sensors to show an accurate qibla direction.",
+        "NSCameraUsageDescription": "Miraj uses the camera so you can scan your prayer mat, sink, or the mosque to confirm you are ready for salah.",
+        "NSAlarmKitUsageDescription": "Miraj schedules prominent alarms at prayer times so you never miss a salah.",
+        "UIBackgroundModes": ["location", "fetch", "remote-notification"],
+        "ITSAppUsesNonExemptEncryption": false
       },
       "entitlements": {
-        "com.apple.developer.family-controls": true,
-        "com.apple.security.application-groups": ["group.com.noor.prayerapp"]
+        "com.apple.security.application-groups": ["group.insiders.miraj"]
       }
     },
     "android": {
-      "package": "com.noor.prayerapp",
+      "package": "insiders.miraj",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#F7F4EF"
-      }
+      },
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "plugins": [
       "expo-router",
@@ -53,7 +59,7 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Noor uses your location to detect when you are at a mosque and to keep prayer times accurate."
+          "locationAlwaysAndWhenInUsePermission": "Miraj uses your location to detect when you are at a mosque and to keep prayer times accurate."
         }
       ],
       [
@@ -66,16 +72,10 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Noor uses the camera so you can scan your prayer mat, sink, or the mosque to confirm you are ready for salah."
+          "cameraPermission": "Miraj uses the camera so you can scan your prayer mat, sink, or the mosque to confirm you are ready for salah."
         }
       ],
-      [
-        "react-native-device-activity",
-        {
-          "appleTeamId": "REPLACE_WITH_APPLE_TEAM_ID",
-          "appGroup": "group.com.noor.prayerapp"
-        }
-      ]
+      "@bacons/apple-targets"
     ],
     "experiments": {
       "typedRoutes": true
@@ -83,6 +83,9 @@
     "extra": {
       "router": {
         "origin": false
+      },
+      "eas": {
+        "projectId": "b0c3faaf-4caf-439b-9306-f77e24305c80"
       }
     }
   }

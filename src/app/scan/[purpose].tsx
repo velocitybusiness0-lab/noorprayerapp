@@ -54,7 +54,7 @@ export default function ScanScreen() {
       <View style={[styles.permission, { backgroundColor: theme.colors.background }]}>
         <ThemedText variant="title">Camera access</ThemedText>
         <ThemedText variant="body" color="textSecondary" style={styles.permissionText}>
-          Noor needs the camera so you can scan your prayer mat, sink, or the
+          Miraj needs the camera so you can scan your prayer mat, sink, or the
           masjid to continue.
         </ThemedText>
         <Button label="Allow camera" onPress={requestPermission} />

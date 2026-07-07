@@ -1,13 +1,13 @@
-// Built by @kingstinct/expo-apple-targets (invoked by react-native-device-activity),
-// which scans ./targets/* for expo-target.config files.
+// Widget extension — scanned by @bacons/apple-targets during prebuild.
 module.exports = (config) => ({
   type: "widget",
-  name: "NoorWidget",
+  name: "Widget",
+  bundleIdentifier: "insiders.miraj.Widget",
   icon: "../../assets/images/icon.png",
   deploymentTarget: "16.4",
   frameworks: ["SwiftUI", "WidgetKit", "ActivityKit"],
   entitlements: {
-    "com.apple.security.application-groups": ["group.com.noor.prayerapp"],
+    "com.apple.security.application-groups": ["group.insiders.miraj"],
   },
   colors: {
     widgetBackground: { light: "#FFFFFF", dark: "#0B0B0C" },

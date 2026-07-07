@@ -5,7 +5,7 @@ import { ThemedText } from "@/components/primitives/ThemedText";
 export default function OnboardingScreen() {
   return (
     <Screen>
-      <ThemedText variant="title">Welcome to Noor</ThemedText>
+      <ThemedText variant="title">Welcome to Miraj</ThemedText>
       <ThemedText variant="body" color="textSecondary">
         Onboarding is refined during polish.
       </ThemedText>

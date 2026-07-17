@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
-import { router } from "expo-router";
+import { router, Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Screen } from "@/components/primitives/Screen";
 import { ThemedText } from "@/components/primitives/ThemedText";
@@ -44,7 +44,9 @@ export default function YearCompletionScreen() {
   );
 
   return (
-    <Screen scroll>
+    <>
+      <Stack.Screen options={{ animation: "slide_from_right" }} />
+      <Screen scroll>
       <Pressable
         onPress={() => {
           haptics.selection();
@@ -75,7 +77,8 @@ export default function YearCompletionScreen() {
         </View>
       )}
       {!loading && <HeatmapLegend />}
-    </Screen>
+      </Screen>
+    </>
   );
 }
 

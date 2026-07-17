@@ -1,31 +1,18 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import { CommonActions } from "@react-navigation/native";
+import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/core/theme";
 import { haptics } from "@/core/haptics/HapticsManager";
 import { ThemedText } from "@/components/primitives/ThemedText";
 
-/** Minimal structural shape of the props expo-router passes to `tabBar`. */
-interface TabRoute {
-  key: string;
-  name: string;
-}
-interface TabBarProps {
-  state: { index: number; routes: TabRoute[] };
-  navigation: {
-    emit: (event: {
-      type: "tabPress";
-      target?: string;
-      canPreventDefault: true;
-    }) => { defaultPrevented: boolean };
-    navigate: (name: string) => void;
-  };
-}
+const VISIBLE_TABS = ["index", "timetable", "qibla", "history", "settings"] as const;
 
-const ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
+const ICONS: Record<(typeof VISIBLE_TABS)[number], keyof typeof Ionicons.glyphMap> = {
   index: "moon",
   timetable: "list",
   qibla: "compass",
@@ -34,28 +21,46 @@ const ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
 };
 
 /**
- * Translucent floating tab bar: a blurred glass panel with an opacity
- * gradient so content fades beneath it. Haptic tap on every selection.
+ * Translucent floating tab bar — blurred glass with a soft fade so scrolled
+ * content dissolves beneath it instead of clipping hard.
  */
-export function BlurTabBar({ state, navigation }: TabBarProps) {
+export function BlurTabBar({ state, navigation }: BottomTabBarProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+
+  const visibleRoutes = useMemo(
+    () =>
+      state.routes.filter((route) =>
+        VISIBLE_TABS.includes(route.name as (typeof VISIBLE_TABS)[number])
+      ),
+    [state.routes]
+  );
+
+  const focusedRouteName = state.routes[state.index]?.name;
+  const fadeEnd = theme.isDark ? "rgba(42,49,64,0.92)" : "rgba(247,244,239,0.92)";
 
   return (
     <View style={[styles.wrap, { paddingBottom: insets.bottom || theme.spacing.md }]}>
       <LinearGradient
-        colors={["transparent", theme.colors.background]}
+        colors={["transparent", fadeEnd]}
+        locations={[0, 1]}
         style={styles.fade}
         pointerEvents="none"
       />
       <BlurView
-        intensity={35}
+        intensity={28}
         tint={theme.blurTint}
-        style={[styles.bar, { borderColor: theme.colors.border, backgroundColor: theme.colors.surfaceTranslucent }]}
+        style={[
+          styles.bar,
+          {
+            borderColor: theme.colors.border,
+            backgroundColor: theme.colors.surfaceTranslucent,
+          },
+        ]}
       >
-        {state.routes.map((route, index) => {
-          const focused = state.index === index;
-          const iconName = ICONS[route.name] ?? "ellipse";
+        {visibleRoutes.map((route) => {
+          const focused = focusedRouteName === route.name;
+          const iconName = ICONS[route.name as (typeof VISIBLE_TABS)[number]];
           const tint = focused ? theme.colors.accent : theme.colors.textTertiary;
 
           return (
@@ -70,7 +75,10 @@ export function BlurTabBar({ state, navigation }: TabBarProps) {
                   canPreventDefault: true,
                 });
                 if (!focused && !event.defaultPrevented) {
-                  navigation.navigate(route.name);
+                  navigation.dispatch({
+                    ...CommonActions.navigate(route.name, route.params),
+                    target: state.key,
+                  });
                 }
               }}
             >
@@ -120,7 +128,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    height: 120,
+    height: 128,
   },
   bar: {
     flexDirection: "row",

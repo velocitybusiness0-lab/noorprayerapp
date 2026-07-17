@@ -4,10 +4,16 @@
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
+    "start:metro": "powershell -ExecutionPolicy Bypass -File ./scripts/start-metro-window.ps1",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
     "prebuild": "expo prebuild",
+    "generate:assets": "node scripts/generate-placeholder-assets.js",
+    "fetch:detection-model": "node scripts/fetch-detection-model.js",
+    "build:ios:dev": "npm run fetch:detection-model && powershell -Command \"$env:EAS_NO_VCS='1'; npx eas-cli build --profile development --platform ios\"",
+    "build:ios:preview": "npm run fetch:detection-model && powershell -Command \"$env:EAS_NO_VCS='1'; npx eas-cli build --profile preview --platform ios\"",
+    "build:android:dev": "npm run fetch:detection-model && powershell -Command \"$env:EAS_NO_VCS='1'; npx eas-cli build --profile development --platform android\"",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit"
   },
@@ -16,8 +22,11 @@
     "@expo/vector-icons": "^15.0.3",
     "@react-native-async-storage/async-storage": "2.2.0",
     "adhan": "^4.4.4",
+    "app-blocker": "file:./modules/app-blocker",
     "date-fns": "^4.4.0",
-    "expo": "~54.0.0",
+    "expo": "~54.0.36",
+    "expo-asset": "~12.0.13",
+    "expo-audio": "~1.1.1",
     "expo-blur": "~15.0.8",
     "expo-build-properties": "~1.0.10",
     "expo-camera": "~17.0.10",
@@ -30,12 +39,14 @@
     "expo-linear-gradient": "~15.0.8",
     "expo-linking": "~8.0.12",
     "expo-location": "~19.0.8",
+    "expo-navigation-bar": "~5.0.10",
     "expo-notifications": "~0.32.17",
     "expo-router": "~6.0.24",
     "expo-sensors": "~15.0.8",
     "expo-splash-screen": "~31.0.13",
     "expo-sqlite": "~16.0.10",
     "expo-status-bar": "~3.0.9",
+    "expo-store-review": "~9.0.9",
     "expo-system-ui": "~6.0.9",
     "react": "19.1.0",
     "react-dom": "19.1.0",
@@ -50,11 +61,24 @@
     "react-native-screens": "~4.16.0",
     "react-native-svg": "15.12.1",
     "react-native-worklets": "0.5.1",
+    "vision-scan": "file:./modules/vision-scan",
     "zustand": "^5.0.14"
   },
   "private": true,
+  "expo": {
+    "autolinking": {
+      "android": {
+        "exclude": [
+          "react-native-ios-alarmkit",
+          "react-native-device-activity"
+        ]
+      }
+    }
+  },
   "devDependencies": {
     "@types/react": "~19.1.10",
+    "eslint": "^9.0.0",
+    "eslint-config-expo": "~10.0.0",
     "typescript": "~5.9.2"
   }
 }

@@ -67,7 +67,7 @@ export function createKeyValueStore(id: string): KeyValueStore {
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { createMMKV } = require("react-native-mmkv");
     return new MmkvKeyValueStore(createMMKV({ id }));
   } catch {

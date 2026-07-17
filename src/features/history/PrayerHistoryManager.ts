@@ -19,6 +19,15 @@ interface LogRow {
 export class PrayerHistoryManager {
   constructor(private readonly db: Database = database) {}
 
+  private schemaReady: Promise<void> | null = null;
+
+  async ensureReady(): Promise<void> {
+    if (!this.schemaReady) {
+      this.schemaReady = this.init();
+    }
+    await this.schemaReady;
+  }
+
   async init(): Promise<void> {
     await this.db.run(
       `CREATE TABLE IF NOT EXISTS prayer_log (
@@ -36,6 +45,7 @@ export class PrayerHistoryManager {
     source: PrayerSource,
     when: Date = new Date()
   ): Promise<void> {
+    await this.ensureReady();
     await this.db.run(
       `INSERT OR REPLACE INTO prayer_log (day_key, slot, prayed_at, source)
        VALUES (?, ?, ?, ?);`,
@@ -44,6 +54,7 @@ export class PrayerHistoryManager {
   }
 
   async unlog(slot: ObligatoryPrayer, when: Date = new Date()): Promise<void> {
+    await this.ensureReady();
     await this.db.run(`DELETE FROM prayer_log WHERE day_key = ? AND slot = ?;`, [
       dayKey(when),
       slot,

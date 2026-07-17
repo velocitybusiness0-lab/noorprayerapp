@@ -1,32 +1,18 @@
+import { Platform } from "react-native";
 import { storage } from "@/core/storage/StorageManager";
 import { StorageKeys } from "@/core/storage/storageKeys";
 import { dayKey } from "@/core/utils/time";
 import { DayPrayerTimes, ObligatoryPrayer } from "@/features/prayerTimes/prayerTimes.types";
 import { ModeCheckFn } from "@/features/modes/mode.types";
 import { isExpoGo } from "@/core/runtime/isExpoGo";
+import { blockingShieldConfigurator } from "./BlockingShieldConfigurator";
+import { androidAccessibilityBlocker } from "./AndroidAccessibilityBlocker";
+import { androidBlockScheduleCoordinator } from "./AndroidBlockScheduleCoordinator";
 
 type DeviceActivityModule = typeof import("react-native-device-activity");
 type DeviceActivityAction = import("react-native-device-activity").Action;
 
-/** Uninitialized sentinel — module is resolved lazily on first use. */
-let deviceActivityModule: DeviceActivityModule | null | undefined;
-
-function getDeviceActivity(): DeviceActivityModule | null {
-  if (isExpoGo()) return null;
-  if (deviceActivityModule !== undefined) return deviceActivityModule ?? null;
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    deviceActivityModule = require("react-native-device-activity");
-  } catch {
-    deviceActivityModule = null;
-  }
-  return deviceActivityModule ?? null;
-}
-
-/** How long the shield stays up after a prayer starts if not dismissed. */
 const BLOCK_WINDOW_MINUTES = 30;
-
-/** Persisted id under which the user's blocked-app selection is stored. */
 export const BLOCK_SELECTION_ID = "noor.blockedApps";
 
 export interface BlockingSyncOptions {
@@ -34,29 +20,61 @@ export interface BlockingSyncOptions {
   isModeEnabled: ModeCheckFn;
 }
 
+export interface BlockNowResult {
+  success: boolean;
+  message: string;
+}
+
+let deviceActivityModule: DeviceActivityModule | null | undefined;
+
+function getDeviceActivity(): DeviceActivityModule | null {
+  if (Platform.OS !== "ios" || isExpoGo()) return null;
+  if (deviceActivityModule !== undefined) return deviceActivityModule ?? null;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    deviceActivityModule = require("react-native-device-activity");
+  } catch {
+    deviceActivityModule = null;
+  }
+  return deviceActivityModule ?? null;
+}
+
+function formatIosBlockingError(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  if (message.includes("helper application")) {
+    return (
+      "Screen Time extensions are not running. Install the latest Miraj dev build " +
+      "(eas build --profile development --platform ios), then try again."
+    );
+  }
+  if (message.includes("UNAUTHORIZED") || message.includes("authorization")) {
+    return "Screen Time permission is required. Open Settings → Miraj and allow Screen Time access.";
+  }
+  return message || "Could not start app blocking.";
+}
+
 /**
- * Wraps `react-native-device-activity` (Screen Time / FamilyControls) to
- * shield apps at prayer time and lift the shield after a scan. All calls are
- * guarded so they are safe no-ops when Screen Time is unavailable.
+ * Platform blocking facade: iOS Screen Time on iPhone, Accessibility Service on Android.
  */
 export class BlockingManager {
   get isAvailable(): boolean {
+    if (Platform.OS === "android") return androidAccessibilityBlocker.isAvailable;
     const da = getDeviceActivity();
     return !!da && da.isAvailable();
   }
 
-  async requestAuthorization(): Promise<boolean> {
+  isAuthorized(): boolean {
+    if (Platform.OS === "android") return androidAccessibilityBlocker.isAuthorized();
     const da = getDeviceActivity();
     if (!da) return false;
-    try {
-      await da.requestAuthorization("individual");
-      return da.getAuthorizationStatus() === da.AuthorizationStatus.approved;
-    } catch {
-      return false;
-    }
+    return da.getAuthorizationStatus() === da.AuthorizationStatus.approved;
   }
 
-  /** Persisted id of the user's chosen app selection (from the picker). */
+  async requestAuthorization(): Promise<BlockNowResult> {
+    if (Platform.OS === "android") return androidAccessibilityBlocker.requestAuthorization();
+    return this.requestIosAuthorization();
+  }
+
   get selectionId(): string | undefined {
     return storage.getString(StorageKeys.blockedSelectionId);
   }
@@ -65,95 +83,204 @@ export class BlockingManager {
     storage.setString(StorageKeys.blockedSelectionId, id);
   }
 
+  selectionSummary(): { apps: number; categories: number; domains: number; total: number } {
+    if (Platform.OS === "android") return androidAccessibilityBlocker.selectionSummary();
+    return this.iosSelectionSummary();
+  }
+
   hasSelection(): boolean {
-    const da = getDeviceActivity();
-    if (!da) return false;
-    const id = this.selectionId;
-    return !!id && !!da.getFamilyActivitySelectionId(id);
+    if (Platform.OS === "android") return androidAccessibilityBlocker.hasSelection();
+    return this.selectionSummary().total > 0;
   }
 
   isShieldActive(): boolean {
+    if (Platform.OS === "android") return androidAccessibilityBlocker.isShieldActive();
     const da = getDeviceActivity();
     return !!da && da.isShieldActive();
   }
 
-  /** Immediately raise the shield (foreground / manual). */
-  blockNow(): void {
-    if (!getDeviceActivity()) return;
-    this.applyBlockAction("manual");
+  blockNow(): BlockNowResult {
+    if (Platform.OS === "android") return androidAccessibilityBlocker.blockNow();
+    return this.blockNowIos();
   }
 
-  /** Lift all shields (used by scan-to-unblock). */
   unblockNow(): void {
-    const da = getDeviceActivity();
-    if (!da) return;
-    da.resetBlocks("scan-unblock");
-    da.disableBlockAllMode("scan-unblock");
+    if (Platform.OS === "android") {
+      androidAccessibilityBlocker.unblockNow();
+      return;
+    }
+    this.unblockNowIos();
   }
 
-  /**
-   * Schedules Screen Time monitoring windows so the shield is applied at each
-   * block-mode prayer time (via the monitor extension) and auto-lifts when the
-   * window ends if the user never scanned.
-   */
-  async scheduleForDays(
-    days: DayPrayerTimes[],
-    options: BlockingSyncOptions
-  ): Promise<void> {
+  async scheduleForDays(days: DayPrayerTimes[], options: BlockingSyncOptions): Promise<void> {
+    if (Platform.OS === "android") {
+      androidBlockScheduleCoordinator.sync(days, options);
+      return;
+    }
+    await this.scheduleIos(days, options);
+  }
+
+  // --- Android helpers exposed for settings UI ---
+
+  getAndroidBlockedPackages(): string[] {
+    return androidAccessibilityBlocker.getBlockedPackages();
+  }
+
+  setAndroidBlockedPackages(packages: string[]): void {
+    androidAccessibilityBlocker.setBlockedPackages(packages);
+  }
+
+  listAndroidInstalledApps() {
+    return androidAccessibilityBlocker.listInstalledApps();
+  }
+
+  // --- iOS Screen Time ---
+
+  private async requestIosAuthorization(): Promise<BlockNowResult> {
     const da = getDeviceActivity();
-    if (!da) return;
-    da.stopMonitoring();
-
-    for (const day of days) {
-      for (const entry of day.entries) {
-        if (!entry.isObligatory) continue;
-        const prayer = entry.slot as ObligatoryPrayer;
-        if (!options.isAlertEnabled(prayer)) continue;
-        if (!options.isModeEnabled(prayer, "block")) continue;
-        if (entry.time.getTime() <= Date.now()) continue;
-
-        const activityName = `block-${prayer}-${dayKey(entry.time)}`;
-        const end = new Date(entry.time.getTime() + BLOCK_WINDOW_MINUTES * 60_000);
-
-        await da.startMonitoring(
-          activityName,
-          {
-            intervalStart: { hour: entry.time.getHours(), minute: entry.time.getMinutes() },
-            intervalEnd: { hour: end.getHours(), minute: end.getMinutes() },
-            repeats: false,
-          },
-          []
-        );
-
-        da.configureActions({
-          activityName,
-          callbackName: "intervalDidStart",
-          actions: [this.blockAction()],
-        });
-        da.configureActions({
-          activityName,
-          callbackName: "intervalDidEnd",
-          actions: [{ type: "resetBlocks" }, { type: "disableBlockAllMode" }],
-        });
+    if (!da) {
+      return { success: false, message: "Screen Time is not available on this device." };
+    }
+    try {
+      await da.requestAuthorization("individual");
+      const status = await da.pollAuthorizationStatus({ maxAttempts: 20 });
+      if (status !== da.AuthorizationStatus.approved) {
+        return {
+          success: false,
+          message:
+            "Screen Time access was not granted. Tap Allow on Apple's popup, or enable it in Settings → Miraj.",
+        };
       }
+      blockingShieldConfigurator.apply("auth");
+      return { success: true, message: "Screen Time allowed. Now choose apps to block." };
+    } catch (error) {
+      return { success: false, message: formatIosBlockingError(error) };
     }
   }
 
-  private applyBlockAction(triggeredBy: string): void {
+  private iosSelectionSummary(): { apps: number; categories: number; domains: number; total: number } {
+    const da = getDeviceActivity();
+    const empty = { apps: 0, categories: 0, domains: 0, total: 0 };
+    if (!da) return empty;
+    const id = this.selectionId;
+    if (!id) return empty;
+
+    try {
+      const meta = da.activitySelectionMetadata({ activitySelectionId: id });
+      if (!meta) return empty;
+      const total = meta.applicationCount + meta.categoryCount + meta.webDomainCount;
+      return {
+        apps: meta.applicationCount,
+        categories: meta.categoryCount,
+        domains: meta.webDomainCount,
+        total,
+      };
+    } catch {
+      return empty;
+    }
+  }
+
+  private blockNowIos(): BlockNowResult {
+    const da = getDeviceActivity();
+    if (!da) {
+      return { success: false, message: "Screen Time is not available on this device." };
+    }
+    if (!this.isAuthorized()) {
+      return { success: false, message: "Allow Screen Time first, then choose apps to block." };
+    }
+
+    try {
+      blockingShieldConfigurator.apply("block-now");
+
+      if (this.hasSelection()) {
+        const id = this.selectionId!;
+        da.blockSelection({ activitySelectionId: id }, "block-now");
+      } else {
+        da.enableBlockAllMode("block-now");
+      }
+
+      da.refreshManagedSettingsStore?.();
+
+      if (this.isShieldActive()) {
+        return {
+          success: true,
+          message: this.hasSelection()
+            ? "Blocking is on."
+            : "All apps blocked.",
+        };
+      }
+
+      return {
+        success: false,
+        message: formatIosBlockingError(new Error("Couldn't communicate with a helper application.")),
+      };
+    } catch (error) {
+      return { success: false, message: formatIosBlockingError(error) };
+    }
+  }
+
+  private unblockNowIos(): void {
     const da = getDeviceActivity();
     if (!da) return;
-    const id = this.selectionId;
-    if (id && da.getFamilyActivitySelectionId(id)) {
-      da.blockSelection({ activitySelectionId: id }, triggeredBy);
-    } else {
-      da.enableBlockAllMode(triggeredBy);
+    try {
+      da.resetBlocks("scan-unblock");
+      da.disableBlockAllMode("scan-unblock");
+      da.refreshManagedSettingsStore?.();
+    } catch {
+      // Best-effort unblock.
     }
   }
 
-  private blockAction(): DeviceActivityAction {
+  private async scheduleIos(days: DayPrayerTimes[], options: BlockingSyncOptions): Promise<void> {
+    const da = getDeviceActivity();
+    if (!da || !this.isAuthorized()) return;
+
+    try {
+      blockingShieldConfigurator.apply("schedule");
+      da.stopMonitoring();
+
+      for (const day of days) {
+        for (const entry of day.entries) {
+          if (!entry.isObligatory) continue;
+          const prayer = entry.slot as ObligatoryPrayer;
+          if (!options.isAlertEnabled(prayer)) continue;
+          if (!options.isModeEnabled(prayer, "block")) continue;
+          if (entry.time.getTime() <= Date.now()) continue;
+
+          const activityName = `${BLOCK_SELECTION_ID}-block-${prayer}-${dayKey(entry.time)}`;
+          const end = new Date(entry.time.getTime() + BLOCK_WINDOW_MINUTES * 60_000);
+
+          await da.startMonitoring(
+            activityName,
+            {
+              intervalStart: { hour: entry.time.getHours(), minute: entry.time.getMinutes() },
+              intervalEnd: { hour: end.getHours(), minute: end.getMinutes() },
+              repeats: false,
+            },
+            []
+          );
+
+          da.configureActions({
+            activityName,
+            callbackName: "intervalDidStart",
+            actions: [this.iosBlockAction()],
+          });
+          da.configureActions({
+            activityName,
+            callbackName: "intervalDidEnd",
+            actions: [{ type: "resetBlocks" }, { type: "disableBlockAllMode" }],
+          });
+        }
+      }
+    } catch (error) {
+      if (__DEV__) console.warn("[BlockingManager] scheduleIos failed", error);
+    }
+  }
+
+  private iosBlockAction(): DeviceActivityAction {
     const da = getDeviceActivity();
     const id = this.selectionId;
-    if (da && id && da.getFamilyActivitySelectionId(id)) {
+    if (da && id && this.hasSelection()) {
       return { type: "blockSelection", familyActivitySelectionId: id };
     }
     return { type: "enableBlockAllMode" };

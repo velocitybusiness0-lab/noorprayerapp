@@ -11,7 +11,7 @@ interface ScreenProps {
   contentStyle?: ViewStyle;
 }
 
-const TAB_BAR_CLEARANCE = 96;
+const TAB_BAR_CLEARANCE = 108;
 
 /** Root container: applies themed background and safe-area insets. */
 export function Screen({

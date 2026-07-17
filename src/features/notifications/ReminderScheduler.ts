@@ -1,54 +1,63 @@
 import { DayPrayerTimes, ObligatoryPrayer } from "@/features/prayerTimes/prayerTimes.types";
 import { ModeCheckFn } from "@/features/modes/mode.types";
+import { storage } from "@/core/storage/StorageManager";
+import { StorageKeys } from "@/core/storage/storageKeys";
 import {
   NotificationCategories,
   NotificationManager,
 } from "./NotificationManager";
-import { followUpMessage, reminderMessage } from "./reminderMessages";
-
-const FOLLOW_UP_MINUTES = 15;
+import { reminderMessage } from "./reminderMessages";
 
 export interface ReminderSyncOptions {
   isAlertEnabled: (prayer: ObligatoryPrayer) => boolean;
   isModeEnabled: ModeCheckFn;
-  /** Slots already logged today are skipped for follow-ups. */
-  isLogged?: (prayer: ObligatoryPrayer) => boolean;
 }
 
 /**
- * Turns a day's prayer times + user preferences into scheduled notifications:
- * a soft reminder at prayer time (reminder mode) and a "did you pray?"
- * follow-up ~15 minutes later so the user can log even without opening the app.
+ * Schedules soft reminder notifications at prayer time when reminder mode is on.
+ * Smart-alarm follow-ups live in `PrayerFollowUpScheduler`.
  */
 export class ReminderScheduler {
   constructor(private readonly notifications: NotificationManager) {}
 
-  async syncForDay(day: DayPrayerTimes, options: ReminderSyncOptions): Promise<void> {
-    await this.notifications.cancelAll();
+  async sync(days: DayPrayerTimes[], options: ReminderSyncOptions): Promise<void> {
+    await this.cancelScheduled();
 
+    for (const day of days) {
+      await this.syncDayEntries(day, options);
+    }
+  }
+
+  /** Clears scheduled soft-reminder notifications only. */
+  async cancelScheduled(): Promise<void> {
+    const ids = storage.getObject<string[]>(StorageKeys.prayerReminderIds) ?? [];
+    await this.notifications.cancelScheduled(ids);
+    storage.setObject(StorageKeys.prayerReminderIds, []);
+  }
+
+  private async syncDayEntries(
+    day: DayPrayerTimes,
+    options: ReminderSyncOptions
+  ): Promise<void> {
     for (const entry of day.entries) {
       if (!entry.isObligatory) continue;
       const prayer = entry.slot as ObligatoryPrayer;
       if (!options.isAlertEnabled(prayer)) continue;
 
       if (options.isModeEnabled(prayer, "reminder")) {
-        await this.notifications.scheduleAt(entry.time, {
+        const id = await this.notifications.scheduleAt(entry.time, {
           title: entry.label,
           body: reminderMessage(prayer),
           categoryIdentifier: NotificationCategories.prayerReminder,
           data: { slot: prayer },
         });
-      }
-
-      if (!options.isLogged?.(prayer)) {
-        const followUp = new Date(entry.time.getTime() + FOLLOW_UP_MINUTES * 60_000);
-        await this.notifications.scheduleAt(followUp, {
-          title: "Prayer check-in",
-          body: followUpMessage(entry.label),
-          categoryIdentifier: NotificationCategories.didYouPray,
-          data: { slot: prayer, followUp: true },
-        });
+        if (id) this.trackId(id);
       }
     }
+  }
+
+  private trackId(id: string): void {
+    const ids = storage.getObject<string[]>(StorageKeys.prayerReminderIds) ?? [];
+    storage.setObject(StorageKeys.prayerReminderIds, [...ids, id]);
   }
 }

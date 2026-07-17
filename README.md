@@ -31,16 +31,27 @@ A black-and-white, sleek iOS prayer companion built with **Expo + React Native +
 npm install
 ```
 
-Fill in the two placeholders in `app.json` before building:
+Confirm these in `app.json` before building:
 
-- `ios.appleTeamId` and the `react-native-device-activity` plugin `appleTeamId` → your Apple Team ID.
-- The App Group `group.com.noor.prayerapp` is pre-wired across the app, the widget, and the device-activity extension. Keep it identical everywhere if you rename it.
+- `ios.appleTeamId` and the `withIosScreenTime` plugin `appleTeamId` → your Apple Team ID (`BU2Z46QKJJ`).
+- App Group `group.insiders.miraj` — same value on the app, widget, Live Activity, and Screen Time extensions.
+- `com.apple.developer.family-controls` — required for iPhone app blocking (Screen Time).
+
+For App Store / TestFlight distribution of Screen Time, request [Family Controls](https://developer.apple.com/contact/request/family-controls-distribution) for these bundle IDs:
+
+- `insiders.miraj`
+- `insiders.miraj.ActivityMonitorExtension`
+- `insiders.miraj.ShieldConfiguration`
+- `insiders.miraj.ShieldAction`
+
+Local / internal **development** builds can use Screen Time with your team ID without that approval.
 
 ### Cloud build (EAS)
 
 ```bash
 eas login
-eas build --profile development --platform ios   # dev client for on-device testing
+npm run build:ios:dev        # object scan + Screen Time blocking + widgets
+# or: npm run build:android:dev
 ```
 
 Install the resulting build on your device, then start the bundler:

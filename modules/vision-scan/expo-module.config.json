@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["VisionScanModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.visionscan.VisionScanModule"]
+  }
+}

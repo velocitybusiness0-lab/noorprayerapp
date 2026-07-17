@@ -36,6 +36,8 @@ export interface ColorPalette {
   sunriseGradientEnd: string;
   sunsetGradientStart: string;
   sunsetGradientEnd: string;
+  /** Text and icons on the sunrise row. */
+  sunriseForeground: string;
 }
 
 export const lightColors: ColorPalette = {
@@ -67,6 +69,7 @@ export const lightColors: ColorPalette = {
   sunriseGradientEnd: "#FFD898",
   sunsetGradientStart: "#FFD4B8",
   sunsetGradientEnd: "#E8B8D8",
+  sunriseForeground: "#8A6848",
 };
 
 /** Soft dusk navy — cool blue base with harmonized surfaces and accents. */
@@ -99,4 +102,5 @@ export const darkColors: ColorPalette = {
   sunriseGradientEnd: "#8A6838",
   sunsetGradientStart: "#5A3040",
   sunsetGradientEnd: "#483868",
+  sunriseForeground: "#D4A574",
 };

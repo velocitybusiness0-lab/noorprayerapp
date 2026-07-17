@@ -1,22 +1,16 @@
-import * as Notifications from "expo-notifications";
 import { dayKey } from "@/core/utils/time";
-import { DayPrayerTimes, ObligatoryPrayer } from "@/features/prayerTimes/prayerTimes.types";
+import { DayPrayerTimes, ObligatoryPrayer, PrayerEntry } from "@/features/prayerTimes/prayerTimes.types";
+import { alarmFireRegistry } from "./AlarmFireRegistry";
+import { alarmRegistry } from "./AlarmRegistry";
 import { openAlarmRing } from "./alarmRouter";
 import { AlarmSyncOptions } from "./AlarmScheduler";
 
-export const SmartAlarmNotificationCategory = "SMART_ALARM";
-
-/** Payload attached to fallback smart-alarm notifications. */
-export const SmartAlarmDataType = "smart_alarm";
-
 /**
- * Fallback smart alarm when AlarmKit is unavailable (Expo Go, simulator, or
- * iOS < 26). Uses scheduled local notifications plus in-app timers so the
- * ring screen still opens at prayer time while the app is running.
+ * Fallback smart alarm when AlarmKit is unavailable. Uses in-app timers only
+ * (no notifications) so the ring screen opens at prayer time.
  */
 export class InAppAlarmScheduler {
   private timers = new Map<string, ReturnType<typeof setTimeout>>();
-  private scheduledNotificationIds: string[] = [];
 
   async sync(days: DayPrayerTimes[], options: AlarmSyncOptions): Promise<void> {
     this.clearTimers();
@@ -27,23 +21,39 @@ export class InAppAlarmScheduler {
         const prayer = entry.slot as ObligatoryPrayer;
         if (!options.isAlertEnabled(prayer)) continue;
         if (!options.isModeEnabled(prayer, "alarm")) continue;
-
-        const msUntil = entry.time.getTime() - Date.now();
-        if (msUntil <= 0) continue;
-
-        const alarmId = `inapp-${prayer}-${dayKey(entry.time)}`;
-        this.scheduleTimer(alarmId, prayer, msUntil);
-        await this.scheduleNotification(alarmId, prayer, entry.label, entry.time);
+        this.scheduleEntry(prayer, entry);
       }
+    }
+  }
+
+  async syncCandidates(
+    candidates: { prayer: ObligatoryPrayer; entry: PrayerEntry }[]
+  ): Promise<void> {
+    for (const candidate of candidates) {
+      this.scheduleEntry(candidate.prayer, candidate.entry);
     }
   }
 
   cancelAll(): void {
     this.clearTimers();
-    void this.cancelNotifications();
   }
 
-  private scheduleTimer(alarmId: string, prayer: ObligatoryPrayer, msUntil: number): void {
+  private scheduleEntry(prayer: ObligatoryPrayer, entry: PrayerEntry): void {
+    const msUntil = entry.time.getTime() - Date.now();
+    if (msUntil <= 0) return;
+
+    const alarmId = `inapp-${prayer}-${dayKey(entry.time)}`;
+    alarmFireRegistry.register(alarmId, entry.time);
+    alarmRegistry.register(alarmId, prayer);
+    this.scheduleTimer(alarmId, prayer, entry.time, msUntil);
+  }
+
+  private scheduleTimer(
+    alarmId: string,
+    prayer: ObligatoryPrayer,
+    fireTime: Date,
+    msUntil: number
+  ): void {
     const timer = setTimeout(() => {
       this.timers.delete(alarmId);
       openAlarmRing(prayer, alarmId);
@@ -51,37 +61,13 @@ export class InAppAlarmScheduler {
     this.timers.set(alarmId, timer);
   }
 
-  private async scheduleNotification(
-    alarmId: string,
-    prayer: ObligatoryPrayer,
-    label: string,
-    date: Date
-  ): Promise<void> {
-    const id = await Notifications.scheduleNotificationAsync({
-      content: {
-        title: `${label} • Time to pray`,
-        body: "Open Miraj to scan and dismiss your smart alarm.",
-        sound: true,
-        priority: Notifications.AndroidNotificationPriority.MAX,
-        categoryIdentifier: SmartAlarmNotificationCategory,
-        data: { type: SmartAlarmDataType, slot: prayer, alarmId },
-      },
-      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date },
-    });
-    this.scheduledNotificationIds.push(id);
-  }
-
   private clearTimers(): void {
     for (const timer of this.timers.values()) clearTimeout(timer);
     this.timers.clear();
   }
-
-  private async cancelNotifications(): Promise<void> {
-    for (const id of this.scheduledNotificationIds) {
-      await Notifications.cancelScheduledNotificationAsync(id);
-    }
-    this.scheduledNotificationIds = [];
-  }
 }
 
 export const inAppAlarmScheduler = new InAppAlarmScheduler();
+
+/** Legacy type kept for notification router compatibility with older payloads. */
+export const SmartAlarmDataType = "smart_alarm";

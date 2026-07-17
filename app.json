@@ -27,7 +27,8 @@
         "ITSAppUsesNonExemptEncryption": false
       },
       "entitlements": {
-        "com.apple.security.application-groups": ["group.insiders.miraj"]
+        "com.apple.security.application-groups": ["group.insiders.miraj"],
+        "com.apple.developer.family-controls": true
       }
     },
     "android": {
@@ -75,7 +76,15 @@
           "cameraPermission": "Miraj uses the camera so you can scan your prayer mat, sink, or the mosque to confirm you are ready for salah."
         }
       ],
-      "@bacons/apple-targets"
+      [
+        "./plugins/withIosScreenTime.js",
+        {
+          "appleTeamId": "BU2Z46QKJJ",
+          "appGroup": "group.insiders.miraj"
+        }
+      ],
+      "@bacons/apple-targets",
+      "./plugins/withExcludeIosNativeModules.js"
     ],
     "experiments": {
       "typedRoutes": true

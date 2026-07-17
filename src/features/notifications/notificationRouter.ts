@@ -1,5 +1,5 @@
 import type { NotificationResponse } from "expo-notifications";
-import { router } from "expo-router";
+import { openAlarmRing } from "@/features/alarm/alarmRouter";
 import { ObligatoryPrayer } from "@/features/prayerTimes/prayerTimes.types";
 import { SmartAlarmDataType } from "@/features/alarm/InAppAlarmScheduler";
 import { NotificationActions } from "./NotificationManager";
@@ -24,7 +24,7 @@ export function handleNotificationResponse(response: NotificationResponse): void
 
   if (data?.type === SmartAlarmDataType && slot) {
     const alarmId = (data.alarmId as string | undefined) ?? `notif-${slot}`;
-    router.push(`/alarm/ring?slot=${slot}&alarmId=${alarmId}`);
+    openAlarmRing(slot, alarmId);
     return;
   }
 

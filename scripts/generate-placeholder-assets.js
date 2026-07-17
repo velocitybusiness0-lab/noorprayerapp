@@ -1,7 +1,6 @@
 /**
- * Generates minimal solid-colour PNG placeholder assets so the Expo config
- * and prebuild have valid icon/splash images. Replace these with real art
- * later. Run: `node scripts/generate-placeholder-assets.js`
+ * Generates Miraj placeholder PNG assets (icon, splash, notification).
+ * Run: `node scripts/generate-placeholder-assets.js`
  */
 const fs = require("fs");
 const path = require("path");
@@ -25,22 +24,30 @@ function chunk(type, data) {
   return Buffer.concat([lenBuf, typeBuf, data, crcBuf]);
 }
 
-function solidPng(width, height, [r, g, b, a]) {
+function encodePng(width, height, getPixel) {
   const sig = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
   const ihdr = Buffer.alloc(13);
   ihdr.writeUInt32BE(width, 0);
   ihdr.writeUInt32BE(height, 4);
-  ihdr[8] = 8; // bit depth
-  ihdr[9] = 6; // RGBA
-  const row = Buffer.alloc(1 + width * 4);
-  for (let x = 0; x < width; x++) {
-    row[1 + x * 4] = r;
-    row[1 + x * 4 + 1] = g;
-    row[1 + x * 4 + 2] = b;
-    row[1 + x * 4 + 3] = a;
+  ihdr[8] = 8;
+  ihdr[9] = 6;
+
+  const rows = [];
+  for (let y = 0; y < height; y++) {
+    const row = Buffer.alloc(1 + width * 4);
+    row[0] = 0;
+    for (let x = 0; x < width; x++) {
+      const [r, g, b, a] = getPixel(x, y, width, height);
+      const i = 1 + x * 4;
+      row[i] = r;
+      row[i + 1] = g;
+      row[i + 2] = b;
+      row[i + 3] = a;
+    }
+    rows.push(row);
   }
-  const raw = Buffer.concat(Array.from({ length: height }, () => row));
-  const idat = zlib.deflateSync(raw);
+
+  const idat = zlib.deflateSync(Buffer.concat(rows));
   return Buffer.concat([
     sig,
     chunk("IHDR", ihdr),
@@ -49,21 +56,84 @@ function solidPng(width, height, [r, g, b, a]) {
   ]);
 }
 
+const BG = [11, 11, 12, 255];
+const FG = [247, 244, 239, 255];
+const ACCENT = [107, 158, 136, 255];
+
+function dist(x1, y1, x2, y2) {
+  return Math.hypot(x1 - x2, y1 - y2);
+}
+
+function inCircle(x, y, cx, cy, r) {
+  return dist(x, y, cx, cy) <= r;
+}
+
+function inRing(x, y, cx, cy, inner, outer) {
+  const d = dist(x, y, cx, cy);
+  return d >= inner && d <= outer;
+}
+
+/** Simple crescent + star mark for Miraj. */
+function mirajMarkPixel(x, y, width, height) {
+  const cx = width / 2;
+  const cy = height / 2;
+  const scale = width / 1024;
+  const outerR = 250 * scale;
+  const innerR = 190 * scale;
+  const cutCx = cx + 70 * scale;
+  const cutCy = cy - 20 * scale;
+  const cutR = 210 * scale;
+
+  const crescent =
+    inRing(x, y, cx, cy, innerR, outerR) && !inCircle(x, y, cutCx, cutCy, cutR);
+
+  const starCx = cx + 150 * scale;
+  const starCy = cy - 90 * scale;
+  const star = inCircle(x, y, starCx, starCy, 28 * scale);
+
+  if (crescent || star) return FG;
+  return null;
+}
+
+function solidPixel(color) {
+  return () => color;
+}
+
+function brandedPixel() {
+  return (x, y, width, height) => mirajMarkPixel(x, y, width, height) ?? BG;
+}
+
+function splashPixel() {
+  return (x, y, width, height) => {
+    const mark = mirajMarkPixel(x, y, width, height);
+    if (mark) return mark;
+    return BG;
+  };
+}
+
+function notificationPixel() {
+  return (x, y, width, height) => {
+    const mark = mirajMarkPixel(x, y, width, height);
+    if (mark) return [255, 255, 255, 255];
+    return [0, 0, 0, 0];
+  };
+}
+
 const outDir = path.join(__dirname, "..", "assets", "images");
 fs.mkdirSync(outDir, { recursive: true });
 
-const nearBlack = [11, 11, 12, 255];
-const white = [245, 245, 247, 255];
-
 const assets = [
-  { name: "icon.png", w: 1024, h: 1024, color: nearBlack },
-  { name: "adaptive-icon.png", w: 1024, h: 1024, color: nearBlack },
-  { name: "splash.png", w: 1242, h: 2436, color: nearBlack },
-  { name: "notification-icon.png", w: 96, h: 96, color: white },
-  { name: "favicon.png", w: 48, h: 48, color: nearBlack },
+  { name: "icon.png", w: 1024, h: 1024, pixel: brandedPixel() },
+  { name: "adaptive-icon.png", w: 1024, h: 1024, pixel: brandedPixel() },
+  { name: "splash.png", w: 1242, h: 2436, pixel: splashPixel() },
+  { name: "notification-icon.png", w: 96, h: 96, pixel: notificationPixel() },
+  { name: "favicon.png", w: 48, h: 48, pixel: brandedPixel() },
 ];
 
-for (const a of assets) {
-  fs.writeFileSync(path.join(outDir, a.name), solidPng(a.w, a.h, a.color));
-  console.log("wrote", a.name);
+for (const asset of assets) {
+  fs.writeFileSync(
+    path.join(outDir, asset.name),
+    encodePng(asset.w, asset.h, asset.pixel)
+  );
+  console.log("wrote", asset.name);
 }

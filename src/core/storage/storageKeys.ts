@@ -5,6 +5,7 @@
 export const StorageKeys = {
   themeMode: "theme.mode",
   onboardingComplete: "onboarding.complete",
+  onboardingAnswers: "onboarding.answers",
   calculationMethod: "prayer.calculationMethod",
   calculationAutoByCountry: "prayer.calculationAutoByCountry",
   detectedCountryCode: "prayer.detectedCountry",
@@ -16,12 +17,18 @@ export const StorageKeys = {
   perPrayerModes: "modes.perPrayer",
   selectedAlarmSound: "alarm.selectedSound",
   alarmScheduledIds: "alarm.scheduledIds",
+  alarmSlotById: "alarm.slotById",
+  alarmFireTimes: "alarm.fireTimes",
   blockedSelectionId: "blocking.selectionId",
+  androidBlockedPackages: "blocking.androidPackages",
   masjidModeEnabled: "masjid.enabled",
   savedMosques: "masjid.saved",
   preDisarmedSlots: "masjid.preDisarmed",
   notificationsEnabled: "notifications.enabled",
+  prayerFollowUpIds: "notifications.followUpIds",
+  prayerReminderIds: "notifications.reminderIds",
   dailyGoals: "dailyGoals.snapshot",
+  prayerRemindersEnabled: "notifications.remindersEnabled",
 } as const;
 
 export type StorageKey = (typeof StorageKeys)[keyof typeof StorageKeys];

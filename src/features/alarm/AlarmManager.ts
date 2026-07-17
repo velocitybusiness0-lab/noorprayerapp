@@ -1,22 +1,14 @@
+import { Platform } from "react-native";
 import { isExpoGo } from "@/core/runtime/isExpoGo";
+import { alarmKitUuidForKey, resolveAlarmKitId } from "./AlarmKitUuid";
+import { alarmConfigurationBuilder, type ScheduleAlarmOptions } from "./AlarmConfigurationBuilder";
+import { alarmNativeReconciler } from "./AlarmNativeReconciler";
+import { alarmSessionCoordinator } from "./AlarmSessionCoordinator";
+import { alarmAlertTracker } from "./AlarmAlertTracker";
 
-type AuthorizationState = "notDetermined" | "denied" | "approved";
+export type { ScheduleAlarmOptions };
 
-interface AlarmConfiguration {
-  countdownDuration: { preAlert: number; postAlert: number };
-  schedule: { type: "fixed"; date: number };
-  presentation: {
-    alert: {
-      title: string;
-      stopButton: { text: string; textColor: string; systemImageName: string };
-      secondaryButton: { text: string; textColor: string; systemImageName: string };
-      secondaryButtonBehavior: "countdown";
-    };
-  };
-  tintColor: string;
-  soundName?: string;
-  metadata?: Record<string, string>;
-}
+type AuthorizationState = "notDetermined" | "authorized" | "denied";
 
 interface AlarmKitModule {
   isSupported: boolean;
@@ -28,10 +20,8 @@ interface AlarmKitModule {
 
 interface AlarmKitManagerModule {
   shared: {
-    scheduleOrReschedule: (
-      id: string,
-      configuration: AlarmConfiguration
-    ) => Promise<unknown>;
+    scheduleOrReschedule: (id: string, configuration: unknown) => Promise<unknown>;
+    getAlarms: () => Promise<{ id: string }[]>;
   };
 }
 
@@ -39,10 +29,14 @@ let alarmKitModule: AlarmKitModule | null | undefined;
 let alarmKitManager: AlarmKitManagerModule | null | undefined;
 
 function getAlarmKit(): AlarmKitModule | null {
-  if (isExpoGo()) return null;
+  if (isExpoGo() || Platform.OS !== "ios") {
+    alarmKitModule = null;
+    alarmKitManager = null;
+    return null;
+  }
   if (alarmKitModule !== undefined) return alarmKitModule ?? null;
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const mod = require("react-native-ios-alarmkit");
     alarmKitModule = mod.default ?? mod;
     alarmKitManager = mod.AlarmKitManager ?? null;
@@ -58,16 +52,20 @@ function getAlarmKitManager(): AlarmKitManagerModule | null {
   return alarmKitManager ?? null;
 }
 
-export interface ScheduleAlarmOptions {
-  title: string;
-  soundName?: string;
-  tintColor?: string;
+function logScheduleFailure(logicalId: string, error: unknown): void {
+  if (!__DEV__) return;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { AlarmKitError } = require("react-native-ios-alarmkit");
+    const wrapped = AlarmKitError.fromError(error);
+    console.warn(`[AlarmManager] schedule failed for ${logicalId}: ${wrapped.code} — ${wrapped.message}`);
+  } catch {
+    console.warn(`[AlarmManager] schedule failed for ${logicalId}`, error);
+  }
 }
 
 /**
- * Wraps `react-native-ios-alarmkit` behind a small domain API. Uses a
- * one-shot `fixed` schedule so each prayer alarm fires at an exact time.
- * All methods are safe no-ops on unsupported platforms (Android / iOS < 26).
+ * Wraps `react-native-ios-alarmkit` behind a small domain API.
  */
 export class AlarmManager {
   get isSupported(): boolean {
@@ -87,54 +85,78 @@ export class AlarmManager {
     return kit.requestAuthorization();
   }
 
-  /** Schedules (or reschedules) a prominent alarm at an exact date. */
+  async isAuthorized(): Promise<boolean> {
+    return (await this.getAuthorizationState()) === "authorized";
+  }
+
+  /** Cancels native alarms outside the desired sync set (skips active sessions). */
+  async reconcileNativeAlarms(keepIds: ReadonlySet<string>): Promise<void> {
+    const kit = getAlarmKit();
+    const manager = getAlarmKitManager();
+    if (!kit || !manager || !this.isSupported) return;
+
+    try {
+      const cancelled = await alarmNativeReconciler.cancelStaleAlarms(kit, manager, keepIds);
+      if (__DEV__ && cancelled > 0) {
+        console.info(`[AlarmManager] cleared ${cancelled} stale AlarmKit alarm(s)`);
+      }
+    } catch (error) {
+      if (__DEV__) console.warn("[AlarmManager] reconcileNativeAlarms failed", error);
+    }
+  }
+
   async scheduleAt(
-    id: string,
+    logicalId: string,
     date: Date,
     options: ScheduleAlarmOptions
-  ): Promise<boolean> {
+  ): Promise<string | null> {
     const manager = getAlarmKitManager();
-    if (!manager || !this.isSupported) return false;
-    if (date.getTime() <= Date.now()) return false;
+    if (!manager || !this.isSupported) return null;
+    if (date.getTime() <= Date.now()) return null;
+    if (!(await this.isAuthorized())) {
+      if (__DEV__) console.info("[AlarmManager] AlarmKit authorization not granted");
+      return null;
+    }
 
-    const configuration: AlarmConfiguration = {
-      countdownDuration: { preAlert: 0, postAlert: 0 },
-      schedule: { type: "fixed", date: date.getTime() },
-      presentation: {
-        alert: {
-          title: options.title,
-          stopButton: {
-            text: "Scan to dismiss",
-            textColor: "#FFFFFF",
-            systemImageName: "camera.viewfinder",
-          },
-          secondaryButton: {
-            text: "Snooze",
-            textColor: "#FFFFFF",
-            systemImageName: "zzz",
-          },
-          secondaryButtonBehavior: "countdown",
-        },
-      },
-      tintColor: options.tintColor ?? "#FFFFFF",
-      soundName: options.soundName,
-      metadata: { source: "prayer" },
-    };
+    const alarmKitId = alarmKitUuidForKey(logicalId);
+    const configuration = alarmConfigurationBuilder.buildAlertOnly(
+      date,
+      alarmKitId,
+      logicalId,
+      options
+    );
 
-    const alarm = await manager.shared.scheduleOrReschedule(id, configuration);
-    return alarm !== null;
+    try {
+      const alarm = await manager.shared.scheduleOrReschedule(alarmKitId, configuration);
+      return alarm !== null ? alarmKitId : null;
+    } catch (error) {
+      logScheduleFailure(logicalId, error);
+      return null;
+    }
   }
 
   async cancel(id: string): Promise<void> {
+    if (alarmSessionCoordinator.isActive(id)) return;
+    if (alarmAlertTracker.isAlerting(id)) return;
     const kit = getAlarmKit();
-    if (!kit || !this.isSupported) return;
-    await kit.cancel(id);
+    const kitId = resolveAlarmKitId(id);
+    if (!kit || !this.isSupported || !kitId) return;
+    try {
+      await kit.cancel(kitId);
+    } catch {
+      return;
+    }
   }
 
   async stop(id: string): Promise<void> {
     const kit = getAlarmKit();
-    if (!kit || !this.isSupported) return;
-    await kit.stop(id);
+    const kitId = resolveAlarmKitId(id);
+    if (!kit || !this.isSupported || !kitId) return;
+    try {
+      await kit.stop(kitId);
+    } catch {
+      return;
+    }
   }
 }
 

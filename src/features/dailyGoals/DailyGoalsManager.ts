@@ -31,9 +31,13 @@ export class DailyGoalsManager {
 
   /** Loads goals and resets progress to 0 when a new calendar day starts. */
   ensureToday(today = new Date()): DailyGoalsSnapshot {
-    const snapshot = this.load(today);
+    const snapshot = this.dedupeGoals(this.load(today));
     const stored = storage.getObject<DailyGoalsSnapshot>(StorageKeys.dailyGoals);
     if (stored && stored.dayKey !== snapshot.dayKey) {
+      this.save(snapshot);
+      return snapshot;
+    }
+    if (stored && stored.goals.length !== snapshot.goals.length) {
       this.save(snapshot);
     }
     return snapshot;
@@ -58,14 +62,22 @@ export class DailyGoalsManager {
     return this.withProgress(snapshot, goalId, next);
   }
 
-  addGoal(snapshot: DailyGoalsSnapshot, title: string, target: number): DailyGoalsSnapshot {
+  addGoal(
+    snapshot: DailyGoalsSnapshot,
+    title: string,
+    target: number,
+    goalId?: string
+  ): DailyGoalsSnapshot {
     if (snapshot.goals.length >= MAX_DAILY_GOALS) return snapshot;
 
     const trimmed = title.trim();
     if (!trimmed) return snapshot;
 
+    const id = goalId ?? this.createUniqueGoalId();
+    if (snapshot.goals.some((goal) => goal.id === id)) return snapshot;
+
     const goal: DailyGoal = {
-      id: `goal-${Date.now()}`,
+      id,
       title: trimmed,
       target: this.clampTarget(target),
     };
@@ -128,6 +140,27 @@ export class DailyGoalsManager {
     }
 
     return this.withProgress(snapshot, NAMAZ_PRAYED_GOAL_ID, clamped);
+  }
+
+  private createUniqueGoalId(): string {
+    return `goal-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+  }
+
+  /** Removes duplicate goal ids from persisted snapshots. */
+  private dedupeGoals(snapshot: DailyGoalsSnapshot): DailyGoalsSnapshot {
+    const seen = new Set<string>();
+    const goals: DailyGoal[] = [];
+    const progress: Record<string, number> = {};
+
+    for (const goal of snapshot.goals) {
+      if (seen.has(goal.id)) continue;
+      seen.add(goal.id);
+      goals.push(goal);
+      progress[goal.id] = snapshot.progress[goal.id] ?? 0;
+    }
+
+    if (goals.length === snapshot.goals.length) return snapshot;
+    return { ...snapshot, goals, progress };
   }
 
   private withProgress(

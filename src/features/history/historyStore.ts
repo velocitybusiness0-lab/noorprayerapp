@@ -127,6 +127,7 @@ export const useHistory = create<HistoryState>((set, get) => ({
 
   logPrayed: async (slot, source) => {
     if (get().isLogged(slot)) return;
+    await prayerHistoryManager.ensureReady();
     await prayerHistoryManager.log(slot, source);
     await get().refresh();
   },

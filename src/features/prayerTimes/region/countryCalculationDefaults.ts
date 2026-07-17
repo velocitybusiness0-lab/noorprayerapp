@@ -1,5 +1,4 @@
 import {
-  CalculationMethodKey,
   HighLatitudeRuleKey,
   MadhabKey,
   PrayerCalculationSettings,

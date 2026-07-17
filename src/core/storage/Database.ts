@@ -7,15 +7,21 @@ import * as SQLite from "expo-sqlite";
  */
 export class Database {
   private db: SQLite.SQLiteDatabase | null = null;
+  private opening: Promise<SQLite.SQLiteDatabase> | null = null;
 
   constructor(private readonly name = "noor.db") {}
 
   async connection(): Promise<SQLite.SQLiteDatabase> {
-    if (!this.db) {
-      this.db = await SQLite.openDatabaseAsync(this.name);
-      await this.db.execAsync("PRAGMA journal_mode = WAL;");
+    if (this.db) return this.db;
+    if (!this.opening) {
+      this.opening = (async () => {
+        const opened = await SQLite.openDatabaseAsync(this.name);
+        await opened.execAsync("PRAGMA journal_mode = WAL;");
+        this.db = opened;
+        return opened;
+      })();
     }
-    return this.db;
+    return this.opening;
   }
 
   async run(sql: string, params: SQLite.SQLiteBindValue[] = []): Promise<void> {

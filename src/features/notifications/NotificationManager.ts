@@ -81,6 +81,12 @@ export class NotificationManager {
     await Notifications.cancelAllScheduledNotificationsAsync();
   }
 
+  async cancelScheduled(ids: string[]): Promise<void> {
+    await Promise.all(
+      ids.map((id) => Notifications.cancelScheduledNotificationAsync(id))
+    );
+  }
+
   addResponseListener(
     handler: (response: Notifications.NotificationResponse) => void
   ): Notifications.EventSubscription {

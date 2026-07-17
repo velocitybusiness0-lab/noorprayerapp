@@ -1,10 +1,12 @@
 import { useCallback, useEffect } from "react";
+import { Platform } from "react-native";
 import { usePrayerTimes } from "@/features/prayerTimes/usePrayerTimes";
 import { useModes } from "@/features/modes/modeStore";
 import { ModeCoordinator } from "@/features/modes/ModeCoordinator";
 import { useAlertPrefs } from "@/features/notifications/alertPrefsStore";
 import { useNotificationSetup } from "@/features/notifications/useNotifications";
 import { notificationManager } from "@/features/notifications/NotificationManager";
+import { PrayerFollowUpScheduler } from "@/features/notifications/PrayerFollowUpScheduler";
 import { ReminderScheduler } from "@/features/notifications/ReminderScheduler";
 import { alarmManager } from "@/features/alarm/AlarmManager";
 import { AlarmScheduler } from "@/features/alarm/AlarmScheduler";
@@ -12,6 +14,7 @@ import { inAppAlarmScheduler } from "@/features/alarm/InAppAlarmScheduler";
 import { useAlarmSound } from "@/features/alarm/alarmSoundStore";
 import { soundById } from "@/features/alarm/alarmSounds";
 import { blockingManager } from "@/features/blocking/BlockingManager";
+import { androidAccessibilityBlocker } from "@/features/blocking/AndroidAccessibilityBlocker";
 import { setUnblockHandler } from "@/features/scan/scanActions";
 import { useMasjid } from "@/features/masjidMode/masjidStore";
 import { usePreDisarm } from "@/features/masjidMode/preDisarmStore";
@@ -20,11 +23,14 @@ import { useDailyGoals } from "@/features/dailyGoals/dailyGoalsStore";
 import { widgetBridge } from "@/features/widgets/WidgetBridge";
 import { liveActivityManager } from "@/features/widgets/LiveActivityManager";
 import { widgetSnapshotBuilder } from "@/features/widgets/WidgetSnapshotBuilder";
+import { bootstrapScanDetector } from "@/features/scan/detection/ScanDetectorBootstrap";
+import { useReminderPrefs } from "@/features/notifications/reminderPrefsStore";
 import { ObligatoryPrayer } from "@/features/prayerTimes/prayerTimes.types";
 import { SalahMode } from "@/features/modes/mode.types";
 
 const coordinator = new ModeCoordinator(
   new ReminderScheduler(notificationManager),
+  new PrayerFollowUpScheduler(notificationManager),
   new AlarmScheduler(alarmManager, inAppAlarmScheduler),
   blockingManager
 );
@@ -40,6 +46,7 @@ export function useAppBootstrap(): void {
   const enabledModes = useModes((s) => s.enabledModes);
   const { alerts, isEnabled } = useAlertPrefs();
   const selectedSoundId = useAlarmSound((s) => s.selectedId);
+  const remindersEnabled = useReminderPrefs((s) => s.enabled);
   const masjidEnabled = useMasjid((s) => s.enabled);
   const atMosque = useMasjid((s) => s.atMosque);
   const updatePresence = useMasjid((s) => s.updatePresence);
@@ -48,9 +55,13 @@ export function useAppBootstrap(): void {
   useEffect(() => {
     void useHistory.getState().init();
     useDailyGoals.getState().init();
+    bootstrapScanDetector();
     setUnblockHandler(() => blockingManager.unblockNow());
     if (alarmManager.isSupported) void alarmManager.requestAuthorization();
-    if (blockingManager.isAvailable) void blockingManager.requestAuthorization();
+    // Never auto-prompt Screen Time on boot — that can hang iOS behind splash.
+    if (Platform.OS === "android" && blockingManager.isAvailable) {
+      androidAccessibilityBlocker.syncBlockedPackagesToNative();
+    }
     return () => setUnblockHandler(null);
   }, []);
 
@@ -87,5 +98,5 @@ export function useAppBootstrap(): void {
       soundName: soundById(selectedSoundId).fileName,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [today, location, manager, enabledModes, alerts, selectedSoundId, masjidEnabled, atMosque, preDisarmFlags]);
+  }, [today, location, manager, enabledModes, alerts, selectedSoundId, remindersEnabled, masjidEnabled, atMosque, preDisarmFlags]);
 }

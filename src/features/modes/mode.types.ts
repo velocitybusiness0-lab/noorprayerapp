@@ -16,7 +16,7 @@ export const SALAH_MODE_LABELS: Record<SalahMode, string> = {
 
 export const SALAH_MODE_DESCRIPTIONS: Record<SalahMode, string> = {
   alarm: "A prominent alarm rings at prayer time. Scan to dismiss.",
-  block: "Selected apps are blocked until you scan to unlock.",
+  block: "Blocks selected apps at prayer time. Scan to unblock.",
   reminder: "A gentle notification nudges you to pray.",
 };
 

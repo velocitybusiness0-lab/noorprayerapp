@@ -8,6 +8,7 @@ import { formatClock } from "@/core/utils/time";
 import { PrayerSlot } from "@/features/prayerTimes/prayerTimes.types";
 import { SLOT_ICON } from "./slotIcons";
 import { PrayerRowBackground } from "./PrayerRowBackground";
+import { prayerRowStyleResolver } from "./PrayerRowStyleResolver";
 
 export type RowState = "past" | "current" | "upcoming";
 
@@ -16,7 +17,6 @@ interface PrayerRowProps {
   label: string;
   time: Date;
   state: RowState;
-  isNext?: boolean;
   completed?: boolean;
   allNamazComplete?: boolean;
   showBell?: boolean;
@@ -31,7 +31,6 @@ export function PrayerRow({
   label,
   time,
   state,
-  isNext = false,
   completed = false,
   allNamazComplete = false,
   showBell = false,
@@ -40,38 +39,14 @@ export function PrayerRow({
   onPress,
 }: PrayerRowProps) {
   const theme = useTheme();
-  const highlighted = isNext && !allNamazComplete;
-  const dim = state === "past" && !isNext && !allNamazComplete;
-  const specialRow = isNext || slot === "sunrise" || slot === "maghrib";
-  const showGreen = allNamazComplete && slot !== "sunrise";
-
-  const nameColor = allNamazComplete && slot !== "sunrise"
-    ? "accent"
-    : highlighted
-      ? "accent"
-      : dim
-        ? "textSecondary"
-        : "textPrimary";
-
-  const iconColor =
-    allNamazComplete && slot !== "sunrise"
-      ? theme.colors.accent
-      : highlighted
-        ? theme.colors.accent
-        : dim
-          ? theme.colors.textSecondary
-          : theme.colors.textSecondary;
-
-  const timeColor = allNamazComplete && slot !== "sunrise"
-    ? "accent"
-    : highlighted
-      ? "accent"
-      : dim
-        ? "textSecondary"
-        : "textPrimary";
+  const isCurrent = state === "current";
+  const backdrop = prayerRowStyleResolver.backdrop(slot, isCurrent);
+  const fg = prayerRowStyleResolver.foreground(backdrop, theme.colors);
+  const showDivider = prayerRowStyleResolver.hasDivider(backdrop);
+  const logged = (completed || allNamazComplete) && slot !== "sunrise";
 
   return (
-    <PrayerRowBackground slot={slot} isNext={isNext} completedGreen={showGreen}>
+    <PrayerRowBackground backdrop={backdrop}>
       <Pressable
         onPress={() => {
           if (!onPress) return;
@@ -80,30 +55,33 @@ export function PrayerRow({
         }}
         style={[
           styles.row,
-          !specialRow && { borderBottomColor: theme.colors.hairline, borderBottomWidth: StyleSheet.hairlineWidth },
+          showDivider && {
+            borderBottomColor: theme.colors.hairline,
+            borderBottomWidth: StyleSheet.hairlineWidth,
+          },
         ]}
       >
         <View style={styles.left}>
           <Ionicons
             name={SLOT_ICON[slot]}
-            size={highlighted || allNamazComplete ? 22 : 18}
-            color={iconColor}
+            size={fg.emphasized ? 22 : 18}
+            color={fg.icon}
           />
           <ThemedText
-            variant={highlighted || (allNamazComplete && slot !== "sunrise") ? "heading" : "body"}
-            color={nameColor}
+            variant={fg.emphasized ? "heading" : "body"}
+            style={{ color: fg.text }}
           >
             {label}
           </ThemedText>
-          {(completed || allNamazComplete) && slot !== "sunrise" && (
+          {logged && (
             <Ionicons name="checkmark-circle" size={16} color={theme.colors.accent} />
           )}
         </View>
 
         <View style={styles.right}>
           <ThemedText
-            variant={highlighted || (allNamazComplete && slot !== "sunrise") ? "heading" : "body"}
-            color={timeColor}
+            variant={fg.emphasized ? "heading" : "body"}
+            style={{ color: fg.text }}
           >
             {formatClock(time)}
           </ThemedText>
@@ -119,7 +97,7 @@ export function PrayerRow({
               <Ionicons
                 name={bellOn ? "notifications" : "notifications-off-outline"}
                 size={18}
-                color={bellOn ? theme.colors.accent : theme.colors.textTertiary}
+                color={bellOn ? fg.bellActive : fg.bellMuted}
               />
             </Pressable>
           )}

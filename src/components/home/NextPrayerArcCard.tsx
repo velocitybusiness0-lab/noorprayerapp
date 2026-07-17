@@ -6,10 +6,9 @@ import { useTheme } from "@/core/theme";
 import { Card } from "@/components/primitives/Card";
 import { ThemedText } from "@/components/primitives/ThemedText";
 import { SLOT_ICON } from "@/components/prayer/slotIcons";
-import { formatCountdown, progressBetween } from "@/core/utils/time";
-import { PRAYER_LABELS } from "@/features/prayerTimes/prayerTimes.types";
+import { formatCountdown } from "@/core/utils/time";
+import { DayPrayerTimes, PRAYER_LABELS, PrayerSlot } from "@/features/prayerTimes/prayerTimes.types";
 import { rowStateFor } from "@/features/prayerTimes/prayerSelectors";
-import { DayPrayerTimes } from "@/features/prayerTimes/prayerTimes.types";
 import { PrayerArcGeometry } from "@/components/home/PrayerArcGeometry";
 import { PrayerArcNode, PrayerArcNodeState } from "@/components/home/PrayerArcNode";
 
@@ -17,15 +16,22 @@ interface NextPrayerArcCardProps {
   day: DayPrayerTimes;
   countdownMs: number;
   width: number;
+  completed?: Partial<Record<PrayerSlot, boolean>>;
+  allNamazComplete?: boolean;
 }
 
 const TRACK_WIDTH = 2;
-const ACTIVE_WIDTH = 7;
 const TOP_INSET = 32;
 const BOTTOM_INSET = 28;
 
-/** Hero card: Athan-style semicircle with thick progress and prayer nodes. */
-export function NextPrayerArcCard({ day, countdownMs, width }: NextPrayerArcCardProps) {
+/** Hero card: Athan-style semicircle with prayer nodes and countdown. */
+export function NextPrayerArcCard({
+  day,
+  countdownMs,
+  width,
+  completed = {},
+  allNamazComplete = false,
+}: NextPrayerArcCardProps) {
   const theme = useTheme();
   const inner = width - theme.spacing.lg * 2;
   const pad = 32;
@@ -37,19 +43,13 @@ export function NextPrayerArcCard({ day, countdownMs, width }: NextPrayerArcCard
 
   const arcEntries = day.entries.filter((entry) => entry.isObligatory);
   const n = arcEntries.length;
-  const progress = progressBetween(
-    arcEntries[0].time.getTime(),
-    arcEntries[n - 1].time.getTime(),
-    Date.now()
-  );
 
   const trackPath = geometry.fullTrackPath();
-  const activePath = geometry.activeTrackPath(progress);
   const nextLabel = day.nextSlot ? PRAYER_LABELS[day.nextSlot].toUpperCase() : "";
   const labelTop = cy - radius * 0.42;
 
   return (
-    <Card translucent={false} style={styles.card}>
+    <Card translucent={false} padded={false} style={styles.card}>
       <LinearGradient
         colors={[theme.colors.heroGradientStart, theme.colors.heroGradientEnd]}
         start={{ x: 0, y: 0 }}
@@ -65,22 +65,14 @@ export function NextPrayerArcCard({ day, countdownMs, width }: NextPrayerArcCard
               strokeLinecap="round"
               fill="none"
             />
-            {activePath && (
-              <Path
-                d={activePath}
-                stroke={theme.colors.arcActive}
-                strokeWidth={ACTIVE_WIDTH}
-                strokeLinecap="round"
-                fill="none"
-              />
-            )}
           </Svg>
 
           {arcEntries.map((entry, i) => {
             const f = n > 1 ? i / (n - 1) : 0;
             const p = geometry.pointAt(f);
             const rowState = rowStateFor(entry.slot, entry.time, day.currentSlot);
-            const nodeState = toNodeState(rowState, entry.slot === day.nextSlot);
+            const isLogged = allNamazComplete || Boolean(completed[entry.slot]);
+            const nodeState = toNodeState(rowState, entry.slot === day.nextSlot, isLogged);
 
             return (
               <PrayerArcNode
@@ -109,9 +101,10 @@ export function NextPrayerArcCard({ day, countdownMs, width }: NextPrayerArcCard
 
 function toNodeState(
   rowState: ReturnType<typeof rowStateFor>,
-  isNext: boolean
+  isNext: boolean,
+  isLogged: boolean
 ): PrayerArcNodeState {
-  if (rowState === "past") return "past";
+  if (isLogged || rowState === "past") return "past";
   if (rowState === "current" || isNext) return "current";
   return "upcoming";
 }

@@ -7,7 +7,10 @@ import { SegmentedControl } from "@/components/settings/SegmentedControl";
 import { SelectableRow } from "@/components/settings/SelectableRow";
 import { SalahModeCheckboxRow } from "@/components/modes/SalahModeCheckboxRow";
 import { MasjidModeSection } from "@/components/settings/MasjidModeSection";
+import { AlarmTestSection } from "@/components/settings/AlarmTestSection";
+import { OnboardingReplaySection } from "@/components/settings/OnboardingReplaySection";
 import { BlockingSection } from "@/components/settings/BlockingSection";
+import { AppSupportSection } from "@/components/settings/AppSupportSection";
 import { ToggleRow } from "@/components/settings/ToggleRow";
 import { useThemeMode } from "@/core/theme";
 import { ThemeMode } from "@/core/theme/theme";
@@ -105,6 +108,11 @@ export default function SettingsScreen() {
           />
         ))}
       </SettingSection>
+
+      <AlarmTestSection />
+      <OnboardingReplaySection />
+
+      <AppSupportSection />
     </Screen>
   );
 }

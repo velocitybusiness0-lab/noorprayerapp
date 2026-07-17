@@ -4,9 +4,8 @@ import { manualConfirmDetector } from "./ManualConfirmDetector";
 let active: ObjectDetector = manualConfirmDetector;
 
 /**
- * Registers the active object detector. A native-enabled build can call this
- * at startup with a `CoreMLObjectDetector` wrapping the bundled model; until
- * then the app safely falls back to manual confirmation.
+ * Registers the active object detector. `bootstrapScanDetector` wires the
+ * native Core ML / Vision module at startup; until then manual confirm is used.
  */
 export function setObjectDetector(detector: ObjectDetector): void {
   active = detector;

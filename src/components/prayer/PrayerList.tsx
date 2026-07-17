@@ -32,7 +32,6 @@ export function PrayerList({
           label={entry.label}
           time={entry.time}
           state={rowStateFor(entry.slot, entry.time, day.currentSlot)}
-          isNext={entry.slot === day.nextSlot}
           completed={completed[entry.slot]}
           allNamazComplete={allNamazComplete}
           showBell={showBells && entry.isObligatory}

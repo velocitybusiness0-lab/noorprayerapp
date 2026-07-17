@@ -1,7 +1,11 @@
+import { DetectorSource } from "./DetectorSource";
+
 /** A single detected object with a normalized confidence [0,1]. */
 export interface Detection {
   label: string;
   confidence: number;
+  /** coreml = SSD/Core ML model; vision = VNClassifyImageRequest. */
+  source?: DetectorSource;
 }
 
 /** A captured still to run detection on (file URI from the camera). */

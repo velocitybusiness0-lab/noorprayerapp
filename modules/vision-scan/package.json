@@ -1,0 +1,14 @@
+{
+  "name": "vision-scan",
+  "version": "1.0.0",
+  "description": "On-device Vision detection for salah scan targets (Core ML on iOS, MediaPipe on Android)",
+  "main": "index.ts",
+  "license": "MIT",
+  "author": "Miraj",
+  "homepage": "https://github.com",
+  "peerDependencies": {
+    "expo": "*",
+    "react": "*",
+    "react-native": "*"
+  }
+}

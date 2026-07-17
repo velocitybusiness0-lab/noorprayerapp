@@ -34,7 +34,7 @@ export function VoluntaryPrayersCard({ night }: VoluntaryPrayersCardProps) {
       <View style={[styles.note, { borderTopColor: theme.colors.hairline }]}>
         <Ionicons name="compass-outline" size={16} color={theme.colors.lavender} />
         <ThemedText variant="caption" color="textTertiary" style={styles.noteText}>
-          Istikhara: pray two rak'ah then make the du'a when seeking guidance.
+          Istikhara: pray two {"rak'ah"} then make the {"du'a"} when seeking guidance.
           It may be prayed any time, best in the last third of the night.
         </ThemedText>
       </View>

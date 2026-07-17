@@ -4,13 +4,14 @@ prayer-app/
 
 # Expo
 .expo/
+.expo-export-test/
 dist/
 web-build/
 expo-env.d.ts
 
-# Native
-ios/
-android/
+# Native (top-level prebuild output only — keep modules/*/ios in git)
+/ios/
+/android/
 
 # Metro
 .metro-health-check*
@@ -31,3 +32,4 @@ yarn-error.*
 # Build artifacts
 *.jks
 *.orig.*
+assets/install-dev-build-qr.png

@@ -2,28 +2,24 @@ import React from "react";
 import { StyleSheet, View, ViewStyle } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "@/core/theme";
-import { PrayerSlot } from "@/features/prayerTimes/prayerTimes.types";
+import { RowBackdrop } from "./PrayerRowStyleResolver";
 
 interface PrayerRowBackgroundProps {
-  slot: PrayerSlot;
-  isNext: boolean;
-  completedGreen?: boolean;
+  backdrop: RowBackdrop;
   children: React.ReactNode;
   style?: ViewStyle;
 }
 
-/** Row backdrop: green when complete, next prayer, or sunrise/sunset gradients. */
+/** Row backdrop: green for current namaz; sunrise and maghrib gradients; else plain. */
 export function PrayerRowBackground({
-  slot,
-  isNext,
-  completedGreen = false,
+  backdrop,
   children,
   style,
 }: PrayerRowBackgroundProps) {
   const theme = useTheme();
   const shell = [styles.shell, { borderRadius: theme.radii.md }, style];
 
-  if (completedGreen) {
+  if (backdrop === "current") {
     return (
       <View style={[...shell, { backgroundColor: theme.colors.sageMuted }]}>
         {children}
@@ -31,15 +27,7 @@ export function PrayerRowBackground({
     );
   }
 
-  if (isNext) {
-    return (
-      <View style={[...shell, { backgroundColor: theme.colors.sageMuted }]}>
-        {children}
-      </View>
-    );
-  }
-
-  if (slot === "sunrise") {
+  if (backdrop === "sunrise") {
     return (
       <LinearGradient
         colors={[theme.colors.sunriseGradientStart, theme.colors.sunriseGradientEnd]}
@@ -52,7 +40,7 @@ export function PrayerRowBackground({
     );
   }
 
-  if (slot === "maghrib") {
+  if (backdrop === "maghrib") {
     return (
       <LinearGradient
         colors={[theme.colors.sunsetGradientStart, theme.colors.sunsetGradientEnd]}

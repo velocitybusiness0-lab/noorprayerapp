@@ -1,0 +1,41 @@
+plugins {
+  id 'com.android.library'
+  id 'org.jetbrains.kotlin.android'
+}
+
+group = 'expo.modules.visionscan'
+version = '1.0.0'
+
+def expoModulesCorePlugin = new File(
+  project(":expo-modules-core").projectDir.absolutePath,
+  "ExpoModulesCorePlugin.gradle"
+)
+if (expoModulesCorePlugin.exists()) {
+  apply from: expoModulesCorePlugin
+  applyKotlinExpoModulesCorePlugin()
+  useDefaultAndroidSdkVersions()
+  useCoreDependencies()
+}
+
+android {
+  namespace "expo.modules.visionscan"
+
+  androidResources {
+    noCompress += ["tflite"]
+  }
+
+  sourceSets {
+    main {
+      assets.srcDirs = ['src/main/assets']
+    }
+  }
+}
+
+dependencies {
+  implementation 'com.google.mediapipe:tasks-vision:0.10.21'
+  def camerax = "1.4.1"
+  implementation "androidx.camera:camera-core:$camerax"
+  implementation "androidx.camera:camera-camera2:$camerax"
+  implementation "androidx.camera:camera-lifecycle:$camerax"
+  implementation "androidx.camera:camera-view:$camerax"
+}

@@ -50,9 +50,9 @@ export const ONBOARDING_SETUP_STEPS: OnboardingStep[] = [
         body: "Gentle nudges at salah time so you never drift.",
       },
       {
-        icon: "shield-outline",
-        title: "Distraction blocking",
-        body: "Block apps at prayer time. Scan to unblock when you're ready.",
+        icon: "alarm-outline",
+        title: "Smart prayer alarms",
+        body: "A prominent alarm at salah time. Scan to dismiss when you're ready.",
       },
       {
         icon: "flame-outline",

@@ -36,7 +36,7 @@ function persistModes(modes: SalahMode[]): void {
   storage.setString(StorageKeys.globalMode, normalized[0]);
 }
 
-/** Persisted mode selection. Consumed by the ModeCoordinator (Phase 6). */
+/** Persisted mode selection. Consumed by the ModeCoordinator. */
 export const useModes = create<ModeState>((set, get) => ({
   enabledModes: loadEnabledModes(),
   perPrayer: loadPerPrayer(),

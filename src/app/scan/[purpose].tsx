@@ -15,7 +15,7 @@ import { markAlarmDismissing } from "@/features/alarm/alarmRouter";
 import { useAlarmRingAudio } from "@/features/alarm/useAlarmRingAudio";
 import { ObligatoryPrayer, PrayerSlot } from "@/features/prayerTimes/prayerTimes.types";
 
-const VALID_PURPOSES: ScanPurpose[] = ["disarm", "unblock", "predisarm"];
+const VALID_PURPOSES: ScanPurpose[] = ["disarm", "predisarm"];
 
 function firstParam(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
@@ -86,8 +86,6 @@ export default function ScanScreen() {
         message={session.message}
         streakProgress={session.streakProgress}
         succeeded={session.succeeded}
-        showCloseButton={purpose === "unblock"}
-        onClose={() => scanDismissCoordinator.cancelUnblock()}
         onChangeMissionTarget={session.changeMissionTarget}
         onManualConfirm={session.confirmManual}
       />

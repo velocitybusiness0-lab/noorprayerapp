@@ -9,10 +9,5 @@ module.exports = {
         android: null,
       },
     },
-    "react-native-device-activity": {
-      platforms: {
-        android: null,
-      },
-    },
   },
 };

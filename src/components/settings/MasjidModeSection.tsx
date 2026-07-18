@@ -29,7 +29,7 @@ export function MasjidModeSection() {
     <SettingSection title="Masjid mode">
       <ToggleRow
         label="Enable masjid mode"
-        description="Near a saved masjid, alarms and blocks soften to a quiet check-in."
+        description="Near a saved masjid, alarms soften to a quiet check-in."
         value={enabled}
         onValueChange={setEnabled}
       />

@@ -1,5 +1,5 @@
 /** What a scan is trying to accomplish. */
-export type ScanPurpose = "disarm" | "unblock" | "predisarm";
+export type ScanPurpose = "disarm" | "predisarm";
 
 export interface ScanTarget {
   id: string;
@@ -68,7 +68,7 @@ export function isObjectHuntTarget(target: ScanTarget): boolean {
 }
 
 export function usesObjectHunt(purpose: string): boolean {
-  return purpose === "disarm" || purpose === "unblock";
+  return purpose === "disarm";
 }
 
 /** Targets accepted for each purpose (any one satisfies the scan). */
@@ -77,7 +77,6 @@ export function targetsForPurpose(purpose: ScanPurpose): ScanTarget[] {
     case "predisarm":
       return [SCAN_TARGETS.mosque, SCAN_TARGETS.sink, SCAN_TARGETS.bath];
     case "disarm":
-    case "unblock":
     default:
       return objectHuntTargets();
   }

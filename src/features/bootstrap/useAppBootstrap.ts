@@ -1,5 +1,4 @@
 import { useCallback, useEffect } from "react";
-import { Platform } from "react-native";
 import { usePrayerTimes } from "@/features/prayerTimes/usePrayerTimes";
 import { useModes } from "@/features/modes/modeStore";
 import { ModeCoordinator } from "@/features/modes/ModeCoordinator";
@@ -12,10 +11,7 @@ import { alarmManager } from "@/features/alarm/AlarmManager";
 import { AlarmScheduler } from "@/features/alarm/AlarmScheduler";
 import { inAppAlarmScheduler } from "@/features/alarm/InAppAlarmScheduler";
 import { useAlarmSound } from "@/features/alarm/alarmSoundStore";
-import { soundById } from "@/features/alarm/alarmSounds";
-import { blockingManager } from "@/features/blocking/BlockingManager";
-import { androidAccessibilityBlocker } from "@/features/blocking/AndroidAccessibilityBlocker";
-import { setUnblockHandler } from "@/features/scan/scanActions";
+import { alarmKitSoundFileName } from "@/features/alarm/alarmSounds";
 import { useMasjid } from "@/features/masjidMode/masjidStore";
 import { usePreDisarm } from "@/features/masjidMode/preDisarmStore";
 import { useHistory } from "@/features/history/historyStore";
@@ -31,8 +27,7 @@ import { SalahMode } from "@/features/modes/mode.types";
 const coordinator = new ModeCoordinator(
   new ReminderScheduler(notificationManager),
   new PrayerFollowUpScheduler(notificationManager),
-  new AlarmScheduler(alarmManager, inAppAlarmScheduler),
-  blockingManager
+  new AlarmScheduler(alarmManager, inAppAlarmScheduler)
 );
 
 /**
@@ -56,13 +51,7 @@ export function useAppBootstrap(): void {
     void useHistory.getState().init();
     useDailyGoals.getState().init();
     bootstrapScanDetector();
-    setUnblockHandler(() => blockingManager.unblockNow());
     if (alarmManager.isSupported) void alarmManager.requestAuthorization();
-    // Never auto-prompt Screen Time on boot — that can hang iOS behind splash.
-    if (Platform.OS === "android" && blockingManager.isAvailable) {
-      androidAccessibilityBlocker.syncBlockedPackagesToNative();
-    }
-    return () => setUnblockHandler(null);
   }, []);
 
   useEffect(() => {
@@ -95,7 +84,7 @@ export function useAppBootstrap(): void {
       isAlertEnabled: isEnabled,
       isModeEnabled,
       isLogged: (prayer) => useHistory.getState().isLogged(prayer),
-      soundName: soundById(selectedSoundId).fileName,
+      soundName: alarmKitSoundFileName(selectedSoundId),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [today, location, manager, enabledModes, alerts, selectedSoundId, remindersEnabled, masjidEnabled, atMosque, preDisarmFlags]);

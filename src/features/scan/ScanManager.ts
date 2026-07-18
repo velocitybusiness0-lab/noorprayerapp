@@ -24,8 +24,7 @@ export class ScanManager {
     this.targets = targetsForPurpose(purpose);
     this.missionTarget = missionTarget;
     this.matcher = new ScanLabelMatcher(this.targets);
-    this.pendingHint =
-      purpose === "unblock" ? "Apps stay blocked until you scan." : "Alarm keeps ringing.";
+    this.pendingHint = "Alarm keeps ringing.";
   }
 
   get acceptedTargets(): ScanTarget[] {

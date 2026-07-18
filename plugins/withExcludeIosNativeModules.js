@@ -4,7 +4,6 @@ const path = require("path");
 
 const IOS_ONLY_NATIVE_MODULES = [
   "react-native-ios-alarmkit",
-  "react-native-device-activity",
 ];
 
 /**

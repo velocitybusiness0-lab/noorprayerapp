@@ -14,7 +14,6 @@ import { HomeHeader } from "@/components/home/HomeHeader";
 import { NextPrayerArcCard } from "@/components/home/NextPrayerArcCard";
 import { PrayerList } from "@/components/prayer/PrayerList";
 import { DailyGoalsSection } from "@/components/today/DailyGoalsSection";
-import { HomeAppBlockingCard } from "@/components/home/HomeAppBlockingCard";
 import { NamazCompletionCelebration } from "@/components/celebration/NamazCompletionCelebration";
 import { SalahModePickerModal } from "@/components/modes/SalahModePickerModal";
 import { useTheme } from "@/core/theme";
@@ -128,8 +127,6 @@ export default function TodayScreen() {
           </Card>
 
           <DailyGoalsSection />
-
-          <HomeAppBlockingCard />
 
           <NamazCompletionCelebration visible={celebrationVisible} onFinished={dismissCelebration} />
         </>

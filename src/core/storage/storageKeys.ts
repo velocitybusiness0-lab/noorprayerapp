@@ -19,8 +19,6 @@ export const StorageKeys = {
   alarmScheduledIds: "alarm.scheduledIds",
   alarmSlotById: "alarm.slotById",
   alarmFireTimes: "alarm.fireTimes",
-  blockedSelectionId: "blocking.selectionId",
-  androidBlockedPackages: "blocking.androidPackages",
   masjidModeEnabled: "masjid.enabled",
   savedMosques: "masjid.saved",
   preDisarmedSlots: "masjid.preDisarmed",
@@ -29,6 +27,7 @@ export const StorageKeys = {
   prayerReminderIds: "notifications.reminderIds",
   dailyGoals: "dailyGoals.snapshot",
   prayerRemindersEnabled: "notifications.remindersEnabled",
+  duaLibrary: "duas.library",
 } as const;
 
 export type StorageKey = (typeof StorageKeys)[keyof typeof StorageKeys];

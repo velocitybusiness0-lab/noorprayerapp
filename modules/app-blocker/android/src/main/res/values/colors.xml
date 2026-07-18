@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-  <color name="prayer_block_background">#FFFFFF</color>
-  <color name="prayer_block_accent">#6B9E88</color>
-  <color name="prayer_block_text">#3D3832</color>
-  <color name="prayer_block_muted">#6B6560</color>
-  <color name="prayer_block_button_text">#FFFFFF</color>
-</resources>

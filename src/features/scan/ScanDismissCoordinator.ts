@@ -5,7 +5,6 @@ import { activeAlarmController } from "@/features/alarm/ActiveAlarmController";
 import { useHistory } from "@/features/history/historyStore";
 import { usePreDisarm } from "@/features/masjidMode/preDisarmStore";
 import { ObligatoryPrayer } from "@/features/prayerTimes/prayerTimes.types";
-import { runUnblock } from "./scanActions";
 import { scanSessionGuard } from "./ScanSessionGuard";
 import { ScanPurpose } from "./scanTargets";
 
@@ -29,7 +28,6 @@ export class ScanDismissCoordinator {
         await useHistory.getState().logPrayed(prayerSlot, "scan");
       }
       await activeAlarmController.confirmDismiss(alarmId);
-      if (purpose === "unblock") await runUnblock();
     } catch (error) {
       console.warn("[Scan] Dismiss cleanup failed", error);
       try {
@@ -41,13 +39,6 @@ export class ScanDismissCoordinator {
       scanSessionGuard.close();
       router.replace("/");
     }
-  }
-
-  /** Leaves unblock scan without unblocking apps. */
-  cancelUnblock(): void {
-    haptics.selection();
-    scanSessionGuard.close();
-    router.replace("/");
   }
 }
 

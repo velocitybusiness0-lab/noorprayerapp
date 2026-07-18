@@ -76,7 +76,9 @@ export function OnboardingShell({
         <View style={{ height: theme.spacing.sm }} />
       )}
 
-      <View style={styles.content}>{children}</View>
+      <View style={styles.content} pointerEvents="box-none">
+        {children}
+      </View>
 
       <View
         style={[
@@ -124,10 +126,14 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 20,
+    zIndex: 1,
   },
   footer: {
     paddingHorizontal: 20,
     paddingTop: 12,
     backgroundColor: "transparent",
+    zIndex: 20,
+    elevation: 20,
+    position: "relative",
   },
 });

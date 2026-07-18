@@ -28,6 +28,8 @@ export const StorageKeys = {
   dailyGoals: "dailyGoals.snapshot",
   prayerRemindersEnabled: "notifications.remindersEnabled",
   duaLibrary: "duas.library",
+  motivationPrefs: "motivation.prefs",
+  motivationReminderIds: "notifications.motivationReminderIds",
 } as const;
 
 export type StorageKey = (typeof StorageKeys)[keyof typeof StorageKeys];

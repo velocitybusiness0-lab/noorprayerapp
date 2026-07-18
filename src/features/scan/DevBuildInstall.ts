@@ -3,11 +3,11 @@ import Constants from "expo-constants";
 import { VisionScan } from "@/modules/vision-scan";
 import { isExpoGo } from "@/core/runtime/isExpoGo";
 
-/** Build 40150343 — vision-scan compiled in (fingerprint 08704d85…, finished 22:05). */
+/** Current iPhone dev build (finished 18 Jul 2026). */
 export const MIRAJ_DEV_BUILD_URL =
-  "https://expo.dev/accounts/spiralwoo/projects/noor-prayer-app/builds/40150343-5c79-4869-888c-6cbcbf4d4c4f";
+  "https://expo.dev/accounts/spiralwoo/projects/noor-prayer-app/builds/1acd3767-039f-436b-8653-f39ffd23ebda";
 
-export const MIRAJ_DEV_BUILD_ID = "40150343";
+export const MIRAJ_DEV_BUILD_ID = "1acd3767";
 
 export type ScanNativeStatus =
   | "ready"

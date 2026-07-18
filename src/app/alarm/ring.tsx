@@ -10,6 +10,7 @@ import { Button } from "@/components/primitives/Button";
 import { PRAYER_LABELS, PrayerSlot } from "@/features/prayerTimes/prayerTimes.types";
 import { clearAlarmRingNavigationGuard } from "@/features/alarm/alarmRouter";
 import { useAlarmRingAudio } from "@/features/alarm/useAlarmRingAudio";
+import { useHideTabBar } from "@/features/navigation/useHideTabBar";
 import { formatClock } from "@/core/utils/time";
 
 function firstParam(value: string | string[] | undefined): string | undefined {
@@ -28,6 +29,7 @@ export default function AlarmRingScreen() {
   const alarmId = firstParam(params.alarmId);
   const label = PRAYER_LABELS[slot] ?? "Prayer";
 
+  useHideTabBar("alarm-ring");
   useAlarmRingAudio(alarmId);
 
   const onScan = () => {

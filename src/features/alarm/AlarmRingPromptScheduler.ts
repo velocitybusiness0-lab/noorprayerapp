@@ -1,41 +1,35 @@
 import { ObligatoryPrayer } from "@/features/prayerTimes/prayerTimes.types";
+import { ExactDeadlineScheduler } from "./ExactDeadlineScheduler";
 import { alarmFireRegistry } from "./AlarmFireRegistry";
 import { openAlarmRing } from "./alarmRouter";
 
 /**
- * Opens the in-app ring screen at fire time when AlarmKit handles the native
- * alert. AlarmKit does not always surface an "alerting" update while Miraj is
- * foregrounded, so this companion timer is required for the dismiss UI.
+ * Opens the in-app ring screen at the exact fire instant when AlarmKit handles
+ * the native alert. Re-aligns the deadline so long waits do not drift late.
  */
 class AlarmRingPromptScheduler {
-  private timers = new Map<string, ReturnType<typeof setTimeout>>();
+  private readonly deadlines = new ExactDeadlineScheduler();
 
   schedule(alarmId: string, prayer: ObligatoryPrayer, fireAt: Date): void {
     this.cancel(alarmId);
 
-    const msUntil = fireAt.getTime() - Date.now();
-    if (msUntil <= 0) {
+    const deadlineMs = fireAt.getTime();
+    if (deadlineMs <= Date.now()) {
       this.openIfDue(alarmId, prayer);
       return;
     }
 
-    const timer = setTimeout(() => {
-      this.timers.delete(alarmId);
+    this.deadlines.schedule(alarmId, deadlineMs, () => {
       this.openIfDue(alarmId, prayer);
-    }, msUntil);
-    this.timers.set(alarmId, timer);
+    });
   }
 
   cancel(alarmId: string): void {
-    const timer = this.timers.get(alarmId);
-    if (!timer) return;
-    clearTimeout(timer);
-    this.timers.delete(alarmId);
+    this.deadlines.cancel(alarmId);
   }
 
   cancelAll(): void {
-    for (const timer of this.timers.values()) clearTimeout(timer);
-    this.timers.clear();
+    this.deadlines.cancelAll();
   }
 
   private openIfDue(alarmId: string, prayer: ObligatoryPrayer): void {

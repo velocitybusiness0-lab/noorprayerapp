@@ -1,10 +1,5 @@
 import React from "react";
 import { Pressable, StyleSheet } from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from "react-native-reanimated";
 import { useTheme } from "@/core/theme";
 import { haptics } from "@/core/haptics/HapticsManager";
 import { ThemedText } from "@/components/primitives/ThemedText";
@@ -26,44 +21,35 @@ export function OnboardingContinueButton({
   onPress,
 }: OnboardingContinueButtonProps) {
   const theme = useTheme();
-  const scale = useSharedValue(1);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
 
   return (
-    <Animated.View style={animatedStyle}>
-      <Pressable
-        disabled={disabled}
-        onPressIn={() => {
-          scale.value = withTiming(0.98, { duration: 90 });
-        }}
-        onPressOut={() => {
-          scale.value = withTiming(1, { duration: 120 });
-        }}
-        onPress={() => {
-          if (disabled) return;
-          haptics.selection();
-          onPress();
-        }}
-        style={[
-          styles.button,
-          {
-            borderRadius: theme.radii.pill,
-            backgroundColor: backgroundColor ?? theme.colors.textPrimary,
-          },
-          disabled && styles.disabled,
-        ]}
+    <Pressable
+      accessibilityRole="button"
+      disabled={disabled}
+      hitSlop={16}
+      onPress={() => {
+        if (disabled) return;
+        if (__DEV__) console.info("[Onboarding] continue pressed", label);
+        onPress();
+        haptics.selection();
+      }}
+      style={({ pressed }) => [
+        styles.button,
+        {
+          borderRadius: theme.radii.pill,
+          backgroundColor: backgroundColor ?? theme.colors.textPrimary,
+          opacity: disabled ? 0.35 : pressed ? 0.88 : 1,
+          transform: [{ scale: pressed && !disabled ? 0.98 : 1 }],
+        },
+      ]}
+    >
+      <ThemedText
+        variant="bodyStrong"
+        style={{ color: textColor ?? theme.colors.textInverse }}
       >
-        <ThemedText
-          variant="bodyStrong"
-          style={{ color: textColor ?? theme.colors.textInverse }}
-        >
-          {label}
-        </ThemedText>
-      </Pressable>
-    </Animated.View>
+        {label}
+      </ThemedText>
+    </Pressable>
   );
 }
 
@@ -72,8 +58,6 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: "center",
     justifyContent: "center",
-  },
-  disabled: {
-    opacity: 0.35,
+    minHeight: 54,
   },
 });

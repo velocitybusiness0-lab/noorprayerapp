@@ -40,13 +40,10 @@ export interface OnboardingSlide {
   pastel: OnboardingPastelTone;
 }
 
-export type OnboardingFeaturePreview = "prayer-times" | "goals" | "default";
-
 export interface OnboardingFeatureSlide {
   icon: string;
   title: string;
   body: string;
-  preview?: OnboardingFeaturePreview;
 }
 
 export interface OnboardingCalculationQuote {

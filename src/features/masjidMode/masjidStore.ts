@@ -26,7 +26,7 @@ function loadMosques(): SavedMosque[] {
 /**
  * Masjid mode state: whether it's on, the user's saved mosques, and whether
  * they are currently at one. When at a masjid, the coordinator softens alarms
- * and blocks to a quiet reminder + "did you pray?" follow-up.
+ * and softens to a quiet reminder + "did you pray?" follow-up.
  */
 export const useMasjid = create<MasjidState>((set, get) => ({
   enabled: loadEnabled(),

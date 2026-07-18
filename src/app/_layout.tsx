@@ -15,6 +15,10 @@ void SplashScreen.preventAutoHideAsync().catch(() => {
   // Older binaries / Expo Go may not support this.
 });
 
+export const unstable_settings = {
+  initialRouteName: "index",
+};
+
 function RootNavigator() {
   const theme = useTheme();
 

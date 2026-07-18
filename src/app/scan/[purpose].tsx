@@ -13,6 +13,7 @@ import { scanDismissCoordinator } from "@/features/scan/ScanDismissCoordinator";
 import { scanSessionGuard } from "@/features/scan/ScanSessionGuard";
 import { markAlarmDismissing } from "@/features/alarm/alarmRouter";
 import { useAlarmRingAudio } from "@/features/alarm/useAlarmRingAudio";
+import { useHideTabBar } from "@/features/navigation/useHideTabBar";
 import { ObligatoryPrayer, PrayerSlot } from "@/features/prayerTimes/prayerTimes.types";
 
 const VALID_PURPOSES: ScanPurpose[] = ["disarm", "predisarm"];
@@ -34,6 +35,7 @@ export default function ScanScreen() {
   const slot = (firstParam(params.slot) as PrayerSlot | undefined) ?? "fajr";
   const alarmId = firstParam(params.alarmId);
 
+  useHideTabBar("scan");
   useAlarmRingAudio(alarmId);
 
   useEffect(() => {

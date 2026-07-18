@@ -26,25 +26,28 @@ export function MasjidModeSection() {
   };
 
   return (
-    <SettingSection title="Masjid mode">
+    <SettingSection title="Masjid">
       <ToggleRow
-        label="Enable masjid mode"
+        label="Masjid mode"
         description="Near a saved masjid, alarms soften to a quiet check-in."
         value={enabled}
         onValueChange={setEnabled}
       />
 
       {enabled && atMosque && (
-        <View style={[styles.status, { borderColor: theme.colors.hairline }]}>
+        <View style={[styles.status, { borderTopColor: theme.colors.hairline }]}>
           <Ionicons name="location" size={16} color={theme.colors.textPrimary} />
           <ThemedText variant="caption" color="textSecondary">
-            {`At ${nearbyName ?? "a masjid"} - alarms softened`}
+            {`At ${nearbyName ?? "a masjid"} — alarms softened`}
           </ThemedText>
         </View>
       )}
 
       {mosques.map((mosque) => (
-        <View key={mosque.id} style={styles.mosqueRow}>
+        <View
+          key={mosque.id}
+          style={[styles.mosqueRow, { borderTopColor: theme.colors.hairline }]}
+        >
           <ThemedText variant="body" color="textSecondary">
             {mosque.name}
           </ThemedText>
@@ -60,9 +63,12 @@ export function MasjidModeSection() {
         </View>
       ))}
 
-      <Pressable style={styles.add} onPress={saveCurrent}>
+      <Pressable
+        style={[styles.add, { borderTopColor: theme.colors.hairline }]}
+        onPress={saveCurrent}
+      >
         <Ionicons name="add-circle-outline" size={18} color={theme.colors.textPrimary} />
-        <ThemedText variant="body">Save current location as masjid</ThemedText>
+        <ThemedText variant="body">Save current location</ThemedText>
       </Pressable>
     </SettingSection>
   );
@@ -73,15 +79,21 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    paddingVertical: 10,
-    marginTop: 6,
+    paddingVertical: 12,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   mosqueRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 12,
+    paddingVertical: 14,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
-  add: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 12 },
+  add: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingVertical: 14,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
 });

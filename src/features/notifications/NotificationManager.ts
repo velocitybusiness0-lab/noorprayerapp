@@ -13,6 +13,7 @@ export const NotificationActions = {
 export const NotificationCategories = {
   prayerReminder: "PRAYER_REMINDER",
   didYouPray: "DID_YOU_PRAY",
+  motivationReminder: "MOTIVATION_REMINDER",
 } as const;
 
 /**

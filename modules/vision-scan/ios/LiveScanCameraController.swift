@@ -35,6 +35,8 @@ final class LiveScanCameraController: NSObject {
   private func configureSession() {
     session.beginConfiguration()
     session.sessionPreset = .high
+    // Keep AlarmKit / in-app ringtone alive — default true steals AVAudioSession.
+    session.automaticallyConfiguresApplicationAudioSession = false
 
     guard
       let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),

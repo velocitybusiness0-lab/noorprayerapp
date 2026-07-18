@@ -1,16 +1,18 @@
 import { dayKey } from "@/core/utils/time";
 import { DayPrayerTimes, ObligatoryPrayer, PrayerEntry } from "@/features/prayerTimes/prayerTimes.types";
+import { AlarmFireInstant } from "./AlarmFireInstant";
+import { ExactDeadlineScheduler } from "./ExactDeadlineScheduler";
 import { alarmFireRegistry } from "./AlarmFireRegistry";
 import { alarmRegistry } from "./AlarmRegistry";
 import { openAlarmRing } from "./alarmRouter";
 import { AlarmSyncOptions } from "./AlarmScheduler";
 
 /**
- * Fallback smart alarm when AlarmKit is unavailable. Uses in-app timers only
- * (no notifications) so the ring screen opens at prayer time.
+ * Fallback smart alarm when AlarmKit is unavailable. Uses wall-clock aligned
+ * timers so the ring screen opens at HH:MM:00.
  */
 export class InAppAlarmScheduler {
-  private timers = new Map<string, ReturnType<typeof setTimeout>>();
+  private readonly deadlines = new ExactDeadlineScheduler();
 
   async sync(days: DayPrayerTimes[], options: AlarmSyncOptions): Promise<void> {
     this.clearTimers();
@@ -27,10 +29,10 @@ export class InAppAlarmScheduler {
   }
 
   async syncCandidates(
-    candidates: { prayer: ObligatoryPrayer; entry: PrayerEntry }[]
+    candidates: { prayer: ObligatoryPrayer; entry: PrayerEntry; fireAt?: Date }[]
   ): Promise<void> {
     for (const candidate of candidates) {
-      this.scheduleEntry(candidate.prayer, candidate.entry);
+      this.scheduleEntry(candidate.prayer, candidate.entry, candidate.fireAt);
     }
   }
 
@@ -38,32 +40,24 @@ export class InAppAlarmScheduler {
     this.clearTimers();
   }
 
-  private scheduleEntry(prayer: ObligatoryPrayer, entry: PrayerEntry): void {
-    const msUntil = entry.time.getTime() - Date.now();
-    if (msUntil <= 0) return;
-
-    const alarmId = `inapp-${prayer}-${dayKey(entry.time)}`;
-    alarmFireRegistry.register(alarmId, entry.time);
-    alarmRegistry.register(alarmId, prayer);
-    this.scheduleTimer(alarmId, prayer, entry.time, msUntil);
-  }
-
-  private scheduleTimer(
-    alarmId: string,
+  private scheduleEntry(
     prayer: ObligatoryPrayer,
-    fireTime: Date,
-    msUntil: number
+    entry: PrayerEntry,
+    explicitFireAt?: Date
   ): void {
-    const timer = setTimeout(() => {
-      this.timers.delete(alarmId);
+    const fireAt = explicitFireAt ?? AlarmFireInstant.forPrayerTime(entry.time);
+    if (fireAt.getTime() <= Date.now()) return;
+
+    const alarmId = `inapp-${prayer}-${dayKey(fireAt)}`;
+    alarmFireRegistry.register(alarmId, fireAt);
+    alarmRegistry.register(alarmId, prayer);
+    this.deadlines.schedule(alarmId, fireAt.getTime(), () => {
       openAlarmRing(prayer, alarmId);
-    }, msUntil);
-    this.timers.set(alarmId, timer);
+    });
   }
 
   private clearTimers(): void {
-    for (const timer of this.timers.values()) clearTimeout(timer);
-    this.timers.clear();
+    this.deadlines.cancelAll();
   }
 }
 

@@ -23,7 +23,7 @@ function load(): SlotFlags {
 /**
  * Tracks prayers the user has manually pre-disarmed (e.g. by scanning the
  * masjid/wudhu area beforehand). The coordinator softens these to a reminder
- * so no alarm/block fires when they are already heading to pray.
+ * so no alarm fires when they are already heading to pray.
  */
 export const usePreDisarm = create<PreDisarmState>((set, get) => ({
   flags: load(),

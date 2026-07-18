@@ -1,7 +1,9 @@
 import type { NotificationResponse } from "expo-notifications";
+import { router } from "expo-router";
 import { openAlarmRing } from "@/features/alarm/alarmRouter";
 import { ObligatoryPrayer } from "@/features/prayerTimes/prayerTimes.types";
 import { SmartAlarmDataType } from "@/features/alarm/InAppAlarmScheduler";
+import { ReminderRoutes } from "@/features/motivation/ReminderRoutes";
 import { NotificationActions } from "./NotificationManager";
 
 type PrayerLogHandler = (prayer: ObligatoryPrayer) => void;
@@ -17,6 +19,7 @@ export function setPrayerLogHandler(handler: PrayerLogHandler | null): void {
  * Routes an interactive notification response. When the user confirms they
  * prayed (either category's positive action), the registered logger records it.
  * Smart-alarm notifications open the ring screen.
+ * Motivation reminders open the Reminders feed.
  */
 export function handleNotificationResponse(response: NotificationResponse): void {
   const data = response.notification.request.content.data;
@@ -25,6 +28,11 @@ export function handleNotificationResponse(response: NotificationResponse): void
   if (data?.type === SmartAlarmDataType && slot) {
     const alarmId = (data.alarmId as string | undefined) ?? `notif-${slot}`;
     openAlarmRing(slot, alarmId);
+    return;
+  }
+
+  if (data?.type === "motivationReminder") {
+    router.push(ReminderRoutes.feed());
     return;
   }
 

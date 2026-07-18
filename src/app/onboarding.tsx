@@ -7,6 +7,7 @@ import { OnboardingStepCatalog } from "@/features/onboarding/OnboardingStepCatal
 import { OnboardingProgressPolicy } from "@/features/onboarding/OnboardingProgressPolicy";
 import { onboardingPermissionCoordinator } from "@/features/onboarding/OnboardingPermissionCoordinator";
 import { useOnboardingFlow } from "@/features/onboarding/useOnboardingFlow";
+import { useHideTabBar } from "@/features/navigation/useHideTabBar";
 import { useTheme } from "@/core/theme";
 
 export default function OnboardingScreen() {
@@ -16,6 +17,8 @@ export default function OnboardingScreen() {
   const [calcProgress, setCalcProgress] = useState(0);
   const [slideshowIndex, setSlideshowIndex] = useState(0);
   const [stepInteractionReady, setStepInteractionReady] = useState(true);
+
+  useHideTabBar("onboarding");
 
   useEffect(() => {
     if (step?.type !== "calculation") setCalcProgress(0);
@@ -53,20 +56,25 @@ export default function OnboardingScreen() {
   }, [flow]);
 
   const advance = useCallback(() => {
+    setSlideshowIndex(0);
+    setStepInteractionReady(true);
     const isLast = flow.stepIndex >= flow.totalSteps - 1;
     if (isLast) {
       finish();
       return;
     }
-    flow.goNext();
-  }, [finish, flow]);
-
-  const handleContinue = useCallback(async () => {
-    if (!step) return;
-
-    if (step.type === "feature-slideshow") {
-      await onboardingPermissionCoordinator.requestAll();
+    const moved = flow.goNext();
+    if (__DEV__) {
+      console.info("[Onboarding] advance", {
+        from: flow.stepIndex,
+        stepId: step?.id,
+        moved,
+      });
     }
+  }, [finish, flow, step?.id]);
+
+  const handleContinue = useCallback(() => {
+    if (!step) return;
 
     if (step.type === "name") {
       const name = flow.answers[step.id];
@@ -75,6 +83,13 @@ export default function OnboardingScreen() {
 
     if (step.type === "slider" && typeof flow.answers[step.id] !== "number") {
       flow.setAnswer(step.id, step.min ?? 0);
+    }
+
+    if (step.type === "feature-slideshow") {
+      void onboardingPermissionCoordinator.requestAll().finally(() => {
+        advance();
+      });
+      return;
     }
 
     advance();
@@ -112,34 +127,34 @@ export default function OnboardingScreen() {
       <Stack.Screen
         options={{
           presentation: "fullScreenModal",
+          gestureEnabled: false,
           contentStyle: { flex: 1 },
         }}
       />
       <OnboardingShell
-      progress={headerProgress}
-      progressOpacity={progressOpacity}
-      showProgressBar={showProgressBar}
-      showBack={flow.stepIndex > 0 && step.type !== "calculation"}
-      continueLabel={step.continueLabel}
-      continueDisabled={continueDisabled}
-      hideContinue={hideContinue}
-      keyboardAvoid={step.type === "name"}
-      pastel={shellPastel ?? "default"}
-      onBack={flow.goBack}
-      onContinue={() => {
-        void handleContinue();
-      }}
-    >
-      <OnboardingStepContent
-        step={step}
-        answers={flow.answers}
-        onAnswer={flow.setAnswer}
-        onCalculationComplete={advance}
-        onCalculationProgress={setCalcProgress}
-        onSlideshowSlideChange={setSlideshowIndex}
-        onComparisonAnimationComplete={handleComparisonComplete}
-      />
-    </OnboardingShell>
+        progress={headerProgress}
+        progressOpacity={progressOpacity}
+        showProgressBar={showProgressBar}
+        showBack={flow.stepIndex > 0 && step.type !== "calculation"}
+        continueLabel={step.continueLabel}
+        continueDisabled={continueDisabled}
+        hideContinue={hideContinue}
+        keyboardAvoid={step.type === "name"}
+        pastel={shellPastel ?? "default"}
+        onBack={flow.goBack}
+        onContinue={handleContinue}
+      >
+        <OnboardingStepContent
+          key={step.id}
+          step={step}
+          answers={flow.answers}
+          onAnswer={flow.setAnswer}
+          onCalculationComplete={advance}
+          onCalculationProgress={setCalcProgress}
+          onSlideshowSlideChange={setSlideshowIndex}
+          onComparisonAnimationComplete={handleComparisonComplete}
+        />
+      </OnboardingShell>
     </>
   );
 }

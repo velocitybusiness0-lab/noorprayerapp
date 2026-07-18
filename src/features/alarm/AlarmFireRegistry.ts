@@ -40,8 +40,14 @@ class AlarmFireRegistry {
   prune(validIds: string[]): void {
     const valid = new Set(validIds);
     let changed = false;
-    for (const id of this.fireTimes.keys()) {
-      if (shouldRetainForActiveAlarm(id) || this.isDue(id)) continue;
+    const now = Date.now();
+    const retainPastMs = 20 * 60_000;
+
+    for (const [id, fire] of [...this.fireTimes.entries()]) {
+      if (shouldRetainForActiveAlarm(id) || this.isDue(id, now)) continue;
+      // Keep upcoming (and recently due) fires — e.g. 1-minute test alarms
+      // that prayer sync must not wipe before they ring.
+      if (now <= fire + retainPastMs) continue;
       if (!valid.has(id)) {
         this.fireTimes.delete(id);
         changed = true;

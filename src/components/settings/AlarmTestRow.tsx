@@ -1,15 +1,14 @@
 import React, { useState } from "react";
-import { StyleSheet } from "react-native";
-import { Button } from "@/components/primitives/Button";
+import { StyleSheet, View } from "react-native";
+import { SettingActionRow } from "@/components/settings/SettingActionRow";
 import { ThemedText } from "@/components/primitives/ThemedText";
-import { SettingSection } from "@/components/settings/SettingSection";
 import { haptics } from "@/core/haptics/HapticsManager";
 import { formatClock } from "@/core/utils/time";
 import { useAlarmSound } from "@/features/alarm/alarmSoundStore";
 import { alarmTestScheduler } from "@/features/alarm/AlarmTestScheduler";
 
-/** Dev-only control to fire a smart alarm after one minute. */
-export function AlarmTestSection() {
+/** Dev-only row that schedules a smart alarm one minute from now. */
+export function AlarmTestRow() {
   const soundId = useAlarmSound((s) => s.selectedId);
   const [status, setStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -17,8 +16,9 @@ export function AlarmTestSection() {
   if (!__DEV__) return null;
 
   const onPress = () => {
+    if (busy) return;
+
     void (async () => {
-      haptics.impact();
       setBusy(true);
       setStatus(null);
 
@@ -31,11 +31,9 @@ export function AlarmTestSection() {
         }
 
         haptics.success();
-        const channel =
-          result.channel === "alarmkit"
-            ? "AlarmKit (lock screen)"
-            : "in-app (keep Miraj open)";
-        setStatus(`Test alarm set for ${formatClock(result.fireAt)} via ${channel}.`);
+        setStatus(
+          `Test set for ${formatClock(result.fireAt)}. ${result.detail}`
+        );
       } finally {
         setBusy(false);
       }
@@ -43,28 +41,22 @@ export function AlarmTestSection() {
   };
 
   return (
-    <SettingSection title="Developer">
-      <Button
+    <View>
+      <SettingActionRow
         label={busy ? "Scheduling…" : "Test alarm in 1 minute"}
+        description="Keep Miraj open. Rings for Maghrib — complete object hunt to dismiss."
+        icon="alarm-outline"
         onPress={onPress}
-        disabled={busy}
-        variant="secondary"
-        style={styles.button}
       />
-      <ThemedText variant="caption" color="textTertiary" style={styles.hint}>
-        Rings for Maghrib. Complete the object hunt to dismiss it.
-      </ThemedText>
       {status ? (
         <ThemedText variant="caption" color="textSecondary" style={styles.status}>
           {status}
         </ThemedText>
       ) : null}
-    </SettingSection>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  button: { alignSelf: "stretch" },
-  hint: { marginTop: 10 },
-  status: { marginTop: 8 },
+  status: { marginTop: 4, marginBottom: 12, paddingHorizontal: 2 },
 });

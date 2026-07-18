@@ -15,6 +15,8 @@ import { alarmKitUuidForKey, logicalAlarmKey } from "./AlarmKitUuid";
 import { alarmSessionCoordinator } from "./AlarmSessionCoordinator";
 import { alarmAlertTracker } from "./AlarmAlertTracker";
 import { alarmRingPromptScheduler } from "./AlarmRingPromptScheduler";
+import { alarmContinuityStore } from "./AlarmContinuityStore";
+import { AlarmFireInstant } from "./AlarmFireInstant";
 
 export interface AlarmSyncOptions {
   isAlertEnabled: (prayer: ObligatoryPrayer) => boolean;
@@ -25,6 +27,7 @@ export interface AlarmSyncOptions {
 interface AlarmCandidate {
   prayer: ObligatoryPrayer;
   entry: PrayerEntry;
+  fireAt: Date;
   logicalId: string;
 }
 
@@ -87,6 +90,7 @@ export class AlarmScheduler {
     options: AlarmSyncOptions
   ): AlarmCandidate[] {
     const candidates: AlarmCandidate[] = [];
+    const now = Date.now();
 
     for (const day of days) {
       for (const entry of day.entries) {
@@ -94,12 +98,15 @@ export class AlarmScheduler {
         const prayer = entry.slot as ObligatoryPrayer;
         if (!options.isAlertEnabled(prayer)) continue;
         if (!options.isModeEnabled(prayer, "alarm")) continue;
-        if (entry.time.getTime() <= Date.now()) continue;
+
+        const fireAt = AlarmFireInstant.forPrayerTime(entry.time);
+        if (fireAt.getTime() <= now) continue;
 
         candidates.push({
           prayer,
           entry,
-          logicalId: logicalAlarmKey(prayer, dayKey(entry.time)),
+          fireAt,
+          logicalId: logicalAlarmKey(prayer, dayKey(fireAt)),
         });
       }
     }
@@ -126,7 +133,7 @@ export class AlarmScheduler {
 
     for (const candidate of candidates) {
       const alarmKitId = alarmKitUuidForKey(candidate.logicalId);
-      alarmFireRegistry.register(alarmKitId, candidate.entry.time);
+      alarmFireRegistry.register(alarmKitId, candidate.fireAt);
     }
 
     await this.alarms.reconcileNativeAlarms(targetIds);
@@ -149,7 +156,7 @@ export class AlarmScheduler {
     if (failed.length) {
       await this.fallback.syncCandidates(failed);
       const fallbackIds = failed.map(
-        (candidate) => `inapp-${candidate.prayer}-${dayKey(candidate.entry.time)}`
+        (candidate) => `inapp-${candidate.prayer}-${dayKey(candidate.fireAt)}`
       );
       alarmRegistry.prune([...scheduledIds, ...fallbackIds]);
       alarmFireRegistry.prune([...scheduledIds, ...fallbackIds]);
@@ -183,7 +190,7 @@ export class AlarmScheduler {
       const alarmKitId = alarmKitUuidForKey(candidate.logicalId);
       const scheduled = await this.alarms.scheduleAt(
         candidate.logicalId,
-        candidate.entry.time,
+        candidate.fireAt,
         {
           title: `${candidate.entry.label} \u2022 Time to pray`,
           soundName: options.soundName,
@@ -193,10 +200,14 @@ export class AlarmScheduler {
 
       if (scheduled) {
         alarmRegistry.register(alarmKitId, candidate.prayer);
+        alarmContinuityStore.remember(alarmKitId, {
+          title: `${candidate.entry.label} \u2022 Time to pray`,
+          slot: candidate.prayer,
+        });
         alarmRingPromptScheduler.schedule(
           alarmKitId,
           candidate.prayer,
-          candidate.entry.time
+          candidate.fireAt
         );
         scheduledIds.push(alarmKitId);
       } else {

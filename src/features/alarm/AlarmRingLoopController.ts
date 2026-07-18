@@ -1,21 +1,19 @@
-import { NativeModules } from "react-native";
 import { alarmSessionCoordinator } from "./AlarmSessionCoordinator";
+import { alarmRingAudioPolicy } from "./AlarmRingAudioPolicy";
 
 const ALARM_LOOP = require("../../../assets/sounds/alarm_loop.wav");
 
 type AudioPlayer = {
   loop: boolean;
+  playing?: boolean;
   play: () => void;
   pause: () => void;
+  remove?: () => void;
   release?: () => void;
 };
 
 type ExpoAudioBindings = {
-  AudioPlayer: new (
-    source: unknown,
-    updateInterval?: number,
-    keepAudioSessionActive?: boolean
-  ) => AudioPlayer;
+  createPlayer: (source: unknown) => AudioPlayer;
   setAudioModeAsync: (mode: {
     playsInSilentMode?: boolean;
     shouldPlayInBackground?: boolean;
@@ -25,25 +23,37 @@ type ExpoAudioBindings = {
 };
 
 function loadExpoAudio(): ExpoAudioBindings | null {
-  if (!NativeModules.ExpoAudio) return null;
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const mod = require("expo-audio");
-    if (!mod.AudioModule?.AudioPlayer) return null;
-    return {
-      AudioPlayer: mod.AudioModule.AudioPlayer,
-      setAudioModeAsync: mod.setAudioModeAsync,
-      setIsAudioActiveAsync: mod.setIsAudioActiveAsync,
-    };
-  } catch {
+
+    if (typeof mod.createAudioPlayer === "function") {
+      return {
+        createPlayer: (source) =>
+          mod.createAudioPlayer(source, { updateInterval: 500, keepAudioSessionActive: true }),
+        setAudioModeAsync: mod.setAudioModeAsync,
+        setIsAudioActiveAsync: mod.setIsAudioActiveAsync,
+      };
+    }
+
+    if (mod.AudioModule?.AudioPlayer) {
+      return {
+        createPlayer: (source) => new mod.AudioModule.AudioPlayer(source, 500, true),
+        setAudioModeAsync: mod.setAudioModeAsync,
+        setIsAudioActiveAsync: mod.setIsAudioActiveAsync,
+      };
+    }
+
+    return null;
+  } catch (error) {
+    if (__DEV__) console.warn("[AlarmRingLoop] expo-audio unavailable", error);
     return null;
   }
 }
 
 /**
- * Loops bundled alarm audio on the ring and scan screens until dismiss.
- * Always runs while the alarm session is active — AlarmKit may not audibly
- * alert when the app is already foregrounded on repeat fires.
+ * In-app loop only when AlarmKit is not owning the alarm.
+ * Never starts during an AlarmKit dismiss flow — that would swap ringtones.
  */
 class AlarmRingLoopController {
   private audio: ExpoAudioBindings | null | undefined;
@@ -57,20 +67,34 @@ class AlarmRingLoopController {
   }
 
   async ensurePlaying(alarmId: string): Promise<void> {
-    if (!alarmSessionCoordinator.isActive(alarmId)) return;
+    if (!alarmSessionCoordinator.isActive(alarmId)) {
+      alarmSessionCoordinator.onAlarmFired(alarmId);
+    }
+
+    if (!alarmRingAudioPolicy.shouldPlayInAppLoop(alarmId)) {
+      if (this.player) {
+        if (__DEV__) {
+          console.info(`[AlarmRingLoop] AlarmKit owns audio — no in-app loop for ${alarmId}`);
+        }
+        await this.disposePlayer();
+        this.activeAlarmId = null;
+      }
+      return;
+    }
 
     const audio = this.getAudio();
-    if (!audio) return;
+    if (!audio) {
+      if (__DEV__) console.warn("[AlarmRingLoop] No audio module — cannot play alarm sound");
+      return;
+    }
 
     if (this.activeAlarmId === alarmId && this.player) {
-      this.player.play();
-      return;
+      if (this.resumePlayer()) return;
     }
 
     if (this.starting) {
       await this.starting;
-      if (this.activeAlarmId === alarmId && this.player) this.player.play();
-      return;
+      if (this.activeAlarmId === alarmId && this.player && this.resumePlayer()) return;
     }
 
     this.starting = this.startLoop(audio, alarmId);
@@ -86,10 +110,23 @@ class AlarmRingLoopController {
     await this.disposePlayer();
   }
 
+  private resumePlayer(): boolean {
+    if (!this.player) return false;
+    try {
+      this.player.play();
+      if (this.player.playing === false) return false;
+      return true;
+    } catch (error) {
+      if (__DEV__) console.warn("[AlarmRingLoop] resume failed", error);
+      return false;
+    }
+  }
+
   private async disposePlayer(): Promise<void> {
     if (!this.player) return;
     try {
       this.player.pause();
+      this.player.remove?.();
       this.player.release?.();
     } catch {
       // Player may already be released.
@@ -100,18 +137,25 @@ class AlarmRingLoopController {
   private async startLoop(audio: ExpoAudioBindings, alarmId: string): Promise<void> {
     await this.disposePlayer();
 
-    await audio.setIsAudioActiveAsync?.(true);
-    await audio.setAudioModeAsync({
-      playsInSilentMode: true,
-      shouldPlayInBackground: true,
-      interruptionMode: "mixWithOthers",
-    });
+    try {
+      await audio.setIsAudioActiveAsync?.(true);
+      await audio.setAudioModeAsync({
+        playsInSilentMode: true,
+        shouldPlayInBackground: true,
+        interruptionMode: "doNotMix",
+      });
 
-    const player = new audio.AudioPlayer(ALARM_LOOP, 500, true);
-    player.loop = true;
-    player.play();
-    this.player = player;
-    this.activeAlarmId = alarmId;
+      const player = audio.createPlayer(ALARM_LOOP);
+      player.loop = true;
+      player.play();
+      this.player = player;
+      this.activeAlarmId = alarmId;
+      if (__DEV__) console.info(`[AlarmRingLoop] playing in-app fallback for ${alarmId}`);
+    } catch (error) {
+      if (__DEV__) console.warn("[AlarmRingLoop] start failed", error);
+      this.player = null;
+      this.activeAlarmId = null;
+    }
   }
 }
 

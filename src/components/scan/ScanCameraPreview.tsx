@@ -49,6 +49,7 @@ function StillCameraPreview({ session }: { session: ScanSession }) {
       flash="off"
       enableTorch={false}
       animateShutter={false}
+      mute
     />
   );
 }

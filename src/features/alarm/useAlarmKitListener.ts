@@ -7,6 +7,8 @@ import { alarmAlertTracker } from "./AlarmAlertTracker";
 import { alarmFireRegistry } from "./AlarmFireRegistry";
 import { alarmSessionCoordinator } from "./AlarmSessionCoordinator";
 import { clearAlarmRingNavigationGuard, openAlarmRing } from "./alarmRouter";
+import { alarmKitOwnershipRegistry } from "./AlarmKitOwnershipRegistry";
+import { alarmKitContinuityController } from "./AlarmKitContinuityController";
 
 type AlarmKitAlarm = { id: string; state: string };
 
@@ -29,6 +31,9 @@ function syncAlertingState(alarms: AlarmKitAlarm[]): void {
     .filter((alarm) => alarm.state === "alerting")
     .map((alarm) => alarm.id);
   alarmAlertTracker.sync(alertingIds);
+  for (const id of alertingIds) {
+    alarmKitOwnershipRegistry.mark(id);
+  }
 }
 
 function openRingForNewlyAlertingAlarms(
@@ -75,6 +80,7 @@ function handleAlarmUpdates(
 ): void {
   syncAlertingState(alarms);
   openRingForNewlyAlertingAlarms(alarms, alerting);
+  alarmKitContinuityController.handleNativeUpdates(alarms);
 }
 
 async function refreshNativeAlarms(

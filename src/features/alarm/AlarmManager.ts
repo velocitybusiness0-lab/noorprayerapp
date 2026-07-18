@@ -5,6 +5,8 @@ import { alarmConfigurationBuilder, type ScheduleAlarmOptions } from "./AlarmCon
 import { alarmNativeReconciler } from "./AlarmNativeReconciler";
 import { alarmSessionCoordinator } from "./AlarmSessionCoordinator";
 import { alarmAlertTracker } from "./AlarmAlertTracker";
+import { alarmKitOwnershipRegistry } from "./AlarmKitOwnershipRegistry";
+import { ALARM_KIT_REARM_DELAY_MS } from "./AlarmKitContinuityTiming";
 
 export type { ScheduleAlarmOptions };
 
@@ -128,9 +130,47 @@ export class AlarmManager {
 
     try {
       const alarm = await manager.shared.scheduleOrReschedule(alarmKitId, configuration);
-      return alarm !== null ? alarmKitId : null;
+      if (alarm !== null) {
+        alarmKitOwnershipRegistry.mark(alarmKitId);
+        return alarmKitId;
+      }
+      return null;
     } catch (error) {
       logScheduleFailure(logicalId, error);
+      return null;
+    }
+  }
+
+  /**
+   * Re-fires an AlarmKit alarm a moment from now (same id) so stop/X cannot
+   * permanently silence a prayer alarm before object hunt completes.
+   */
+  async rescheduleSoon(
+    alarmKitId: string,
+    options: ScheduleAlarmOptions,
+    delayMs = ALARM_KIT_REARM_DELAY_MS
+  ): Promise<string | null> {
+    const manager = getAlarmKitManager();
+    if (!manager || !this.isSupported) return null;
+    if (!(await this.isAuthorized())) return null;
+
+    const fireAt = new Date(Date.now() + Math.max(delayMs, 800));
+    const configuration = alarmConfigurationBuilder.buildAlertOnly(
+      fireAt,
+      alarmKitId,
+      alarmKitId,
+      options
+    );
+
+    try {
+      const alarm = await manager.shared.scheduleOrReschedule(alarmKitId, configuration);
+      if (alarm !== null) {
+        alarmKitOwnershipRegistry.mark(alarmKitId);
+        return alarmKitId;
+      }
+      return null;
+    } catch (error) {
+      if (__DEV__) console.warn("[AlarmManager] rescheduleSoon failed", error);
       return null;
     }
   }
@@ -140,6 +180,7 @@ export class AlarmManager {
     if (alarmAlertTracker.isAlerting(id)) return;
     const kit = getAlarmKit();
     const kitId = resolveAlarmKitId(id);
+    if (kitId) alarmKitOwnershipRegistry.release(kitId);
     if (!kit || !this.isSupported || !kitId) return;
     try {
       await kit.cancel(kitId);
@@ -151,6 +192,7 @@ export class AlarmManager {
   async stop(id: string): Promise<void> {
     const kit = getAlarmKit();
     const kitId = resolveAlarmKitId(id);
+    if (kitId) alarmKitOwnershipRegistry.release(kitId);
     if (!kit || !this.isSupported || !kitId) return;
     try {
       await kit.stop(kitId);

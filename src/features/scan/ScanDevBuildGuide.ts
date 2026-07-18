@@ -27,7 +27,6 @@ export class ScanDevBuildGuide {
     { feature: "iOS Core ML object detection", needsDevBuild: true },
     { feature: "iOS Apple Vision classification", needsDevBuild: true },
     { feature: "Android MediaPipe object detection", needsDevBuild: true },
-    { feature: '"Verify manually" fallback', needsDevBuild: false },
   ];
 
   static readonly installSteps = [

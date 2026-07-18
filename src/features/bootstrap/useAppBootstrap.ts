@@ -23,12 +23,19 @@ import { bootstrapScanDetector } from "@/features/scan/detection/ScanDetectorBoo
 import { useReminderPrefs } from "@/features/notifications/reminderPrefsStore";
 import { ObligatoryPrayer } from "@/features/prayerTimes/prayerTimes.types";
 import { SalahMode } from "@/features/modes/mode.types";
+import { MotivationReminderScheduler } from "@/features/motivation/MotivationReminderScheduler";
+import {
+  getMotivationPrefsSnapshot,
+  useMotivationPrefs,
+} from "@/features/motivation/motivationPrefsStore";
 
 const coordinator = new ModeCoordinator(
   new ReminderScheduler(notificationManager),
   new PrayerFollowUpScheduler(notificationManager),
   new AlarmScheduler(alarmManager, inAppAlarmScheduler)
 );
+
+const motivationScheduler = new MotivationReminderScheduler(notificationManager);
 
 /**
  * Single orchestration point: initialises services, keeps masjid presence
@@ -42,6 +49,8 @@ export function useAppBootstrap(): void {
   const { alerts, isEnabled } = useAlertPrefs();
   const selectedSoundId = useAlarmSound((s) => s.selectedId);
   const remindersEnabled = useReminderPrefs((s) => s.enabled);
+  const motivationCategories = useMotivationPrefs((s) => s.enabledCategories);
+  const motivationNotifications = useMotivationPrefs((s) => s.notifications);
   const masjidEnabled = useMasjid((s) => s.enabled);
   const atMosque = useMasjid((s) => s.atMosque);
   const updatePresence = useMasjid((s) => s.updatePresence);
@@ -88,4 +97,13 @@ export function useAppBootstrap(): void {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [today, location, manager, enabledModes, alerts, selectedSoundId, remindersEnabled, masjidEnabled, atMosque, preDisarmFlags]);
+
+  useEffect(() => {
+    void motivationScheduler.sync(getMotivationPrefsSnapshot());
+  }, [
+    motivationCategories,
+    motivationNotifications.enabled,
+    motivationNotifications.quantityPerDay,
+    motivationNotifications.windowPresets.join(","),
+  ]);
 }

@@ -4,14 +4,14 @@ import { ObligatoryPrayer } from "@/features/prayerTimes/prayerTimes.types";
 import { setPrayerLogHandler } from "@/features/notifications/notificationRouter";
 import { activityStatsManager } from "@/features/gamification/ActivityStatsManager";
 import { PlayerProgress, SlotCounts } from "@/features/gamification/gamification.types";
-import { demoHistorySeeder } from "./DemoHistorySeeder";
 import { prayerHistoryManager } from "./PrayerHistoryManager";
 import { quranHistoryManager } from "./QuranHistoryManager";
 import { streakManager } from "./StreakManager";
 import { DayCompletion, PrayerLogEntry, PrayerSource, StreakSummary } from "./history.types";
 
 const HISTORY_WINDOW_DAYS = 365;
-const RANDOM_DEMO_KEY = "history.random-demo.v1";
+/** Legacy flag from removed demo seeder — wipe once so fake history disappears. */
+const LEGACY_DEMO_KEY = "history.random-demo.v1";
 
 interface HistoryState {
   ready: boolean;
@@ -61,15 +61,14 @@ export const useHistory = create<HistoryState>((set, get) => ({
   init: async () => {
     await prayerHistoryManager.init();
     await quranHistoryManager.init();
-    if (__DEV__ && !storage.getBoolean(RANDOM_DEMO_KEY)) {
-      await prayerHistoryManager.clearAll();
-      await quranHistoryManager.clearAll();
-      await demoHistorySeeder.seedRandomDemo();
-      storage.setBoolean(RANDOM_DEMO_KEY, true);
-    } else if (__DEV__) {
-      const entries = await prayerHistoryManager.allEntries();
-      if (entries.length === 0) {
-        await demoHistorySeeder.seedRandomDemo();
+    if (storage.getBoolean(LEGACY_DEMO_KEY)) {
+      try {
+        await prayerHistoryManager.clearAll();
+        await quranHistoryManager.clearAll();
+      } catch (error) {
+        console.warn("[History] Failed to clear legacy demo data", error);
+      } finally {
+        storage.delete(LEGACY_DEMO_KEY);
       }
     }
     setPrayerLogHandler((slot) => {

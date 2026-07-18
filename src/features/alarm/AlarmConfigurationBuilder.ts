@@ -12,8 +12,8 @@ export interface ScheduleAlarmOptions {
 const WHITE = "#FFFFFF";
 
 /**
- * Builds AlarmKit configs with alert + snooze countdown presentations.
- * Requires the AlarmLiveActivity widget extension (`targets/widget/`).
+ * Builds AlarmKit configs for prayer alarms.
+ * Alert-only (no snooze/X cancel) — sound stops only after object hunt.
  */
 export class AlarmConfigurationBuilder {
   build(
@@ -22,75 +22,39 @@ export class AlarmConfigurationBuilder {
     logicalId: string,
     options: ScheduleAlarmOptions
   ): AlarmConfiguration {
-    return this.buildWithPresentation(date, alarmKitId, logicalId, options, "full");
+    return this.buildAlertOnly(date, alarmKitId, logicalId, options);
   }
 
-  /** Simpler config without snooze/countdown — used when full presentation fails. */
+  /** Prayer alarms: single stop/open control, no snooze countdown cancel (X). */
   buildAlertOnly(
     date: Date,
     alarmKitId: string,
     logicalId: string,
     options: ScheduleAlarmOptions
   ): AlarmConfiguration {
-    return this.buildWithPresentation(date, alarmKitId, logicalId, options, "alertOnly");
-  }
-
-  private buildWithPresentation(
-    date: Date,
-    alarmKitId: string,
-    logicalId: string,
-    options: ScheduleAlarmOptions,
-    variant: "full" | "alertOnly"
-  ): AlarmConfiguration {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { AlarmConfigurationFactory } = require("react-native-ios-alarmkit");
 
-    const alert = {
-      title: options.title,
-      stopButton: {
-        text: "Open Miraj",
-        textColor: WHITE,
-        systemImageName: "camera.viewfinder",
+    return AlarmConfigurationFactory.create({
+      countdownDuration: {
+        preAlert: 0,
+        // No post-alert snooze window — stop/X would otherwise leave a cancel UI.
+        postAlert: 0,
       },
-      ...(variant === "full"
-        ? {
-            secondaryButton: {
-              text: "Snooze",
-              textColor: WHITE,
-              systemImageName: "zzz",
-            },
-            secondaryButtonBehavior: "countdown" as const,
-          }
-        : {}),
-    };
-
-    const presentation =
-      variant === "full"
-        ? {
-            alert,
-            countdown: {
-              title: options.title,
-              pauseButton: {
-                text: "Cancel",
-                textColor: WHITE,
-                systemImageName: "xmark.circle",
-              },
-            },
-            paused: {
-              title: "Paused",
-              resumeButton: {
-                text: "Resume",
-                textColor: WHITE,
-                systemImageName: "play.circle",
-              },
-            },
-          }
-        : { alert };
-
-    return AlarmConfigurationFactory.alarm({
       schedule: { type: "fixed", date: date.getTime() },
       attributes: {
-        presentation,
+        presentation: {
+          alert: {
+            title: options.title,
+            stopButton: {
+              // System still stops sound on tap; continuity controller re-arms
+              // until object hunt completes.
+              text: "Open scan",
+              textColor: WHITE,
+              systemImageName: "camera.viewfinder",
+            },
+          },
+        },
         metadata: this.metadata(alarmKitId, logicalId, options.slot),
         tintColor: options.tintColor ?? WHITE,
       },

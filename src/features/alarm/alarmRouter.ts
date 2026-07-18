@@ -1,9 +1,10 @@
-import { ObligatoryPrayer } from "@/features/prayerTimes/prayerTimes.types";
+import { ObligatoryPrayer, PRAYER_LABELS } from "@/features/prayerTimes/prayerTimes.types";
+import { scanSessionGuard } from "@/features/scan/ScanSessionGuard";
 import { alarmAlertTracker } from "./AlarmAlertTracker";
+import { alarmContinuityStore } from "./AlarmContinuityStore";
 import { alarmFireRegistry } from "./AlarmFireRegistry";
 import { alarmRingLoop } from "./AlarmRingLoopController";
 import { alarmSessionCoordinator } from "./AlarmSessionCoordinator";
-import { scanSessionGuard } from "@/features/scan/ScanSessionGuard";
 
 export type AlarmRingHandler = (slot: ObligatoryPrayer, alarmId: string) => void;
 
@@ -47,6 +48,11 @@ export function openAlarmRing(slot: ObligatoryPrayer, alarmId: string): void {
 
   const alerting = alarmAlertTracker.isAlerting(alarmId);
   if (!mayOpenRing(alarmId) && !alerting) return;
+
+  alarmContinuityStore.remember(alarmId, {
+    title: `${PRAYER_LABELS[slot]} \u2022 Time to pray`,
+    slot,
+  });
 
   const isNewFire = alarmSessionCoordinator.currentPhase === "idle";
   alarmSessionCoordinator.onAlarmFired(alarmId);

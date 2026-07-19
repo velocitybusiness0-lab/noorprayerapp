@@ -7,7 +7,8 @@ export class OnboardingProgressPolicy {
     (step) => step.id === "calculation"
   );
 
-  static shouldShowProgressBar(_step: OnboardingStep | null, stepIndex: number): boolean {
+  static shouldShowProgressBar(step: OnboardingStep | null, stepIndex: number): boolean {
+    if (step?.type === "welcome") return false;
     if (this.calculationIndex < 0) return true;
     return stepIndex <= this.calculationIndex;
   }

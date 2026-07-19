@@ -31,6 +31,8 @@ interface OnboardingShellProps {
   children: ReactNode;
 }
 
+const FOOTER_CONTENT_HEIGHT = 54 + 12;
+
 /** Shared onboarding frame with matched safe-area colors. */
 export function OnboardingShell({
   progress,
@@ -50,9 +52,11 @@ export function OnboardingShell({
   const insets = useSafeAreaInsets();
   const pastelColors = OnboardingPastelPalette.forTone(pastel, theme.isDark);
   const trackColor = "rgba(61,56,50,0.12)";
+  const footerPad = insets.bottom + theme.spacing.lg;
+  const footerBlock = hideContinue ? 0 : FOOTER_CONTENT_HEIGHT + footerPad;
 
   const body = (
-    <>
+    <View style={styles.fill}>
       {showProgressBar ? (
         <OnboardingProgressHeader
           progress={progress}
@@ -76,20 +80,24 @@ export function OnboardingShell({
         <View style={{ height: theme.spacing.sm }} />
       )}
 
-      <View style={styles.content} pointerEvents="box-none">
+      <View
+        style={[styles.content, { paddingBottom: footerBlock }]}
+        pointerEvents="box-none"
+      >
         {children}
       </View>
 
-      <View
-        style={[
-          styles.footer,
-          {
-            paddingBottom: insets.bottom + theme.spacing.lg,
-            backgroundColor: pastelColors.bg,
-          },
-        ]}
-      >
-        {!hideContinue ? (
+      {!hideContinue ? (
+        <View
+          pointerEvents="box-none"
+          style={[
+            styles.footer,
+            {
+              paddingBottom: footerPad,
+              backgroundColor: pastelColors.bg,
+            },
+          ]}
+        >
           <OnboardingContinueButton
             label={continueLabel}
             disabled={continueDisabled}
@@ -97,9 +105,9 @@ export function OnboardingShell({
             textColor="#FFFFFF"
             onPress={onContinue}
           />
-        ) : null}
-      </View>
-    </>
+        </View>
+      ) : null}
+    </View>
   );
 
   return (
@@ -126,14 +134,16 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 20,
-    zIndex: 1,
+    overflow: "hidden",
   },
   footer: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
     paddingHorizontal: 20,
     paddingTop: 12,
-    backgroundColor: "transparent",
-    zIndex: 20,
-    elevation: 20,
-    position: "relative",
+    zIndex: 100,
+    elevation: 100,
   },
 });

@@ -139,9 +139,13 @@ function OptionTile({
       >
         <ThemedText
           variant="bodyStrong"
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.75}
           style={{
             color: selected ? "#FFFFFF" : ONBOARDING_INK,
             textAlign: "center",
+            width: "100%",
           }}
         >
           {label}

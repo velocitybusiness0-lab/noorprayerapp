@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
-import { router, Stack } from "expo-router";
+import { router } from "expo-router";
 import { OnboardingShell } from "@/components/onboarding/OnboardingShell";
 import { OnboardingStepContent } from "@/components/onboarding/OnboardingStepContent";
 import { OnboardingStepCatalog } from "@/features/onboarding/OnboardingStepCatalog";
@@ -53,7 +53,7 @@ export default function OnboardingScreen() {
   const finish = useCallback(() => {
     flow.complete();
     router.replace("/(tabs)");
-  }, [flow]);
+  }, [flow.complete]);
 
   const advance = useCallback(() => {
     setSlideshowIndex(0);
@@ -71,7 +71,7 @@ export default function OnboardingScreen() {
         moved,
       });
     }
-  }, [finish, flow, step?.id]);
+  }, [finish, flow.goNext, flow.stepIndex, flow.totalSteps, step?.id]);
 
   const handleContinue = useCallback(() => {
     if (!step) return;
@@ -92,8 +92,9 @@ export default function OnboardingScreen() {
       return;
     }
 
+    // Welcome and message steps advance immediately — no selection gate.
     advance();
-  }, [advance, flow, step]);
+  }, [advance, flow.answers, flow.setAnswer, step]);
 
   if (!step) {
     return (
@@ -123,39 +124,30 @@ export default function OnboardingScreen() {
       : stepPastel;
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          presentation: "fullScreenModal",
-          gestureEnabled: false,
-          contentStyle: { flex: 1 },
-        }}
+    <OnboardingShell
+      progress={headerProgress}
+      progressOpacity={progressOpacity}
+      showProgressBar={showProgressBar}
+      showBack={flow.stepIndex > 0 && step.type !== "calculation"}
+      continueLabel={step.continueLabel}
+      continueDisabled={continueDisabled}
+      hideContinue={hideContinue}
+      keyboardAvoid={step.type === "name"}
+      pastel={shellPastel ?? "default"}
+      onBack={flow.goBack}
+      onContinue={handleContinue}
+    >
+      <OnboardingStepContent
+        key={step.id}
+        step={step}
+        answers={flow.answers}
+        onAnswer={flow.setAnswer}
+        onCalculationComplete={advance}
+        onCalculationProgress={setCalcProgress}
+        onSlideshowSlideChange={setSlideshowIndex}
+        onComparisonAnimationComplete={handleComparisonComplete}
       />
-      <OnboardingShell
-        progress={headerProgress}
-        progressOpacity={progressOpacity}
-        showProgressBar={showProgressBar}
-        showBack={flow.stepIndex > 0 && step.type !== "calculation"}
-        continueLabel={step.continueLabel}
-        continueDisabled={continueDisabled}
-        hideContinue={hideContinue}
-        keyboardAvoid={step.type === "name"}
-        pastel={shellPastel ?? "default"}
-        onBack={flow.goBack}
-        onContinue={handleContinue}
-      >
-        <OnboardingStepContent
-          key={step.id}
-          step={step}
-          answers={flow.answers}
-          onAnswer={flow.setAnswer}
-          onCalculationComplete={advance}
-          onCalculationProgress={setCalcProgress}
-          onSlideshowSlideChange={setSlideshowIndex}
-          onComparisonAnimationComplete={handleComparisonComplete}
-        />
-      </OnboardingShell>
-    </>
+    </OnboardingShell>
   );
 }
 

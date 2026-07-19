@@ -1,5 +1,6 @@
 import React from "react";
-import { Pressable, StyleSheet } from "react-native";
+import { StyleSheet } from "react-native";
+import { Pressable } from "react-native-gesture-handler";
 import { useTheme } from "@/core/theme";
 import { haptics } from "@/core/haptics/HapticsManager";
 import { ThemedText } from "@/components/primitives/ThemedText";
@@ -25,6 +26,7 @@ export function OnboardingContinueButton({
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityState={{ disabled }}
       disabled={disabled}
       hitSlop={16}
       onPress={() => {

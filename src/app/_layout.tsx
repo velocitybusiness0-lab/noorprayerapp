@@ -30,14 +30,31 @@ function RootNavigator() {
     <>
       <StatusBar style={theme.isDark ? "light" : "dark"} />
       <AppBootstrap />
-      {/* Auto-register every file under src/app — do not list Stack.Screen manually. */}
       <Stack
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: theme.colors.background },
           animation: "fade",
         }}
-      />
+      >
+        {/* Modal from frame one so the floating tab bar cannot sit above Welcome. */}
+        <Stack.Screen
+          name="onboarding"
+          options={{
+            presentation: "fullScreenModal",
+            animation: "fade",
+            gestureEnabled: false,
+          }}
+        />
+        <Stack.Screen
+          name="alarm/ring"
+          options={{ presentation: "fullScreenModal", gestureEnabled: false }}
+        />
+        <Stack.Screen
+          name="scan/[purpose]"
+          options={{ presentation: "fullScreenModal", gestureEnabled: false }}
+        />
+      </Stack>
     </>
   );
 }

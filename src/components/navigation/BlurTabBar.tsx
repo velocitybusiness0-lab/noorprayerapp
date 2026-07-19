@@ -5,12 +5,13 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { CommonActions } from "@react-navigation/native";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
-import { usePathname, useSegments } from "expo-router";
+import { usePathname, useRootNavigationState, useSegments } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/core/theme";
 import { haptics } from "@/core/haptics/HapticsManager";
 import { ThemedText } from "@/components/primitives/ThemedText";
 import { tabBarVisibilityRegistry } from "@/features/navigation/TabBarVisibilityRegistry";
+import { TabBarVisibilityPolicy } from "@/features/navigation/TabBarVisibilityPolicy";
 
 const VISIBLE_TABS = ["index", "timetable", "qibla", "history", "settings"] as const;
 
@@ -22,20 +23,6 @@ const ICONS: Record<(typeof VISIBLE_TABS)[number], keyof typeof Ionicons.glyphMa
   settings: "settings-sharp",
 };
 
-const HIDDEN_SEGMENTS = new Set(["onboarding", "scan", "alarm"]);
-
-/** Routes where the floating tab bar must not intercept touches. */
-function shouldHideTabBar(pathname: string | null, segments: string[]): boolean {
-  if (tabBarVisibilityRegistry.isHidden()) return true;
-  if (segments.some((segment) => HIDDEN_SEGMENTS.has(segment))) return true;
-  if (!pathname) return false;
-  return (
-    pathname.includes("onboarding") ||
-    pathname.includes("/scan") ||
-    pathname.includes("/alarm")
-  );
-}
-
 /**
  * Translucent floating tab bar — blurred glass with a soft fade so scrolled
  * content dissolves beneath it instead of clipping hard.
@@ -45,10 +32,16 @@ export function BlurTabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
   const segments = useSegments();
-  useSyncExternalStore(
+  const rootState = useRootNavigationState();
+  const registryHidden = useSyncExternalStore(
     (listener) => tabBarVisibilityRegistry.subscribe(listener),
     () => tabBarVisibilityRegistry.isHidden(),
     () => false
+  );
+
+  const activeRouteNames = useMemo(
+    () => TabBarVisibilityPolicy.activeRouteNames(rootState),
+    [rootState]
   );
 
   const visibleRoutes = useMemo(
@@ -62,7 +55,14 @@ export function BlurTabBar({ state, navigation }: BottomTabBarProps) {
   const focusedRouteName = state.routes[state.index]?.name;
   const fadeEnd = theme.isDark ? "rgba(42,49,64,0.92)" : "rgba(247,244,239,0.92)";
 
-  if (shouldHideTabBar(pathname, segments as string[])) {
+  const hidden = TabBarVisibilityPolicy.shouldHide({
+    registryHidden,
+    pathname,
+    segments: segments as string[],
+    activeRouteNames,
+  });
+
+  if (hidden) {
     return null;
   }
 

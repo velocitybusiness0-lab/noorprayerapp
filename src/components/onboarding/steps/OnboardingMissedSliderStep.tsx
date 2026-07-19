@@ -161,7 +161,6 @@ export function OnboardingMissedSliderStep({
 const styles = StyleSheet.create({
   wrap: {
     flex: 1,
-    paddingTop: 48,
   },
   title: {
     textAlign: "center",

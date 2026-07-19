@@ -1,7 +1,7 @@
 import { OnboardingStepCatalog } from "./OnboardingStepCatalog";
 import { OnboardingStep } from "./onboarding.types";
 
-/** Progress bar fills to 100% on the calculation step, then hides. */
+/** Header progress shows through pre-calculation steps, then hides. */
 export class OnboardingProgressPolicy {
   private static readonly calculationIndex = OnboardingStepCatalog.steps.findIndex(
     (step) => step.id === "calculation"
@@ -9,8 +9,9 @@ export class OnboardingProgressPolicy {
 
   static shouldShowProgressBar(step: OnboardingStep | null, stepIndex: number): boolean {
     if (step?.type === "welcome") return false;
+    if (step?.type === "calculation") return false;
     if (this.calculationIndex < 0) return true;
-    return stepIndex <= this.calculationIndex;
+    return stepIndex < this.calculationIndex;
   }
 
   /** Maps pre-calculation steps to 0–95%, then calculation animates to 100%. */
@@ -33,5 +34,17 @@ export class OnboardingProgressPolicy {
       return Math.max(0, 1 - (calcProgress - 0.92) / 0.08);
     }
     return 1;
+  }
+
+  /** Hides back on calculation and cinematic narrative beats. */
+  static shouldShowBack(step: OnboardingStep | null, stepIndex: number): boolean {
+    if (stepIndex <= 0 || !step) return false;
+    if (step.type === "calculation") return false;
+    if (step.type === "downtrend") return false;
+    if (step.type === "slideshow") return false;
+    if (step.type === "hope-screen") return false;
+    if (step.type === "commitment") return false;
+    if (step.type === "benefits-graph") return false;
+    return true;
   }
 }

@@ -57,7 +57,7 @@ export function OnboardingDowntrendStep({ step }: OnboardingDowntrendStepProps) 
 
       <View style={[styles.chart, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
         <ThemedText variant="caption" style={styles.chartLabel}>
-          Momentum over time
+          Prayers over time
         </ThemedText>
         <Svg width="100%" height={150} viewBox="0 0 260 140">
           <Path d="M 12 8 L 248 8 M 12 8 L 12 130" stroke={theme.colors.hairline} strokeWidth={1} fill="none" />
@@ -107,7 +107,6 @@ const styles = StyleSheet.create({
   wrap: {
     flex: 1,
     justifyContent: "center",
-    paddingTop: 52,
     paddingBottom: 12,
     alignItems: "center",
     gap: 18,

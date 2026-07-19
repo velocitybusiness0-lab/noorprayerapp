@@ -1,182 +1,206 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { OnboardingSlideGraphicPalette as Palette } from "@/features/onboarding/OnboardingSlideGraphicPalette";
 import { OnboardingSlideGraphicType } from "@/features/onboarding/onboarding.types";
 
 interface OnboardingSlideGraphicProps {
   type: OnboardingSlideGraphicType;
 }
 
-/** Large monochrome illustrations for urgency and hope slides. */
+/** Large composed illustrations for urgency and hope slides. */
 export function OnboardingSlideGraphic({ type }: OnboardingSlideGraphicProps) {
-  if (type === "domino") return <DominoGraphic />;
-  if (type === "hourglass") return <HourglassGraphic />;
-  return <SummitGraphic />;
+  if (type === "domino") return <CascadeMissGraphic />;
+  if (type === "hourglass") return <ClockGapGraphic />;
+  return <DawnHopeGraphic />;
 }
 
-function DominoGraphic() {
+/** Falling tiles + warning — “one miss becomes many”. */
+function CascadeMissGraphic() {
   return (
     <View style={styles.canvas}>
-      {[0, 1, 2, 3].map((index) => (
-        <View
-          key={index}
-          style={[
-            styles.domino,
-            {
-              left: 28 + index * 42,
-              transform: [{ rotate: `${18 + index * 14}deg` }],
-              opacity: 1 - index * 0.08,
-            },
-          ]}
-        />
-      ))}
-      <Ionicons name="arrow-down" size={54} color="#FFFFFF" style={styles.dominoArrow} />
+      <View style={styles.halo}>
+        <Ionicons name="warning" size={52} color={Palette.cream} />
+      </View>
+      <View style={styles.cascadeRow}>
+        {[0, 1, 2, 3].map((index) => (
+          <View
+            key={index}
+            style={[
+              styles.cascadeTile,
+              {
+                transform: [{ rotate: `${-6 + index * 12}deg` }],
+                opacity: 1 - index * 0.14,
+                marginTop: index * 10,
+              },
+            ]}
+          >
+            <Ionicons
+              name={index === 0 ? "ellipse" : "close"}
+              size={index === 0 ? 14 : 18}
+              color={index === 0 ? Palette.sage : Palette.cream}
+            />
+          </View>
+        ))}
+      </View>
     </View>
   );
 }
 
-function HourglassGraphic() {
+/** Clock + widening gap — “waiting makes it worse”. */
+function ClockGapGraphic() {
   return (
     <View style={styles.canvas}>
-      <View style={styles.hourglassTop} />
-      <View style={styles.hourglassNeck} />
-      <View style={styles.hourglassBottom} />
-      <View style={styles.sandTop} />
-      <View style={styles.sandStream} />
-      <View style={styles.sandBottom} />
-      <Ionicons name="time-outline" size={36} color="#FFFFFF" style={styles.hourglassIcon} />
+      <View style={styles.halo}>
+        <Ionicons name="time" size={54} color={Palette.cream} />
+      </View>
+      <View style={styles.gapRow}>
+        <View style={[styles.gapPill, styles.gapPillLeft]} />
+        <View style={styles.gapChannel}>
+          <Ionicons name="remove" size={28} color={Palette.sageMuted} />
+          <Ionicons name="arrow-forward" size={22} color={Palette.sage} />
+        </View>
+        <View style={[styles.gapPill, styles.gapPillRight]} />
+      </View>
+      <View style={styles.clockBadge}>
+        <Ionicons name="alarm" size={22} color={Palette.sage} />
+      </View>
     </View>
   );
 }
 
-function SummitGraphic() {
+/** Dawn + salah mark — hope / rebuild slide. */
+function DawnHopeGraphic() {
   return (
     <View style={styles.canvas}>
-      <View style={styles.mountainBack} />
-      <View style={styles.mountainFront} />
-      <View style={styles.flagPole} />
-      <Ionicons name="flag" size={52} color="#FFFFFF" style={styles.flag} />
-      <Ionicons name="person" size={54} color="#FFFFFF" style={styles.climber} />
+      <View style={styles.dawnGlow} />
+      <View style={styles.sunDisc}>
+        <Ionicons name="sunny" size={44} color={Palette.cream} />
+      </View>
+      <View style={styles.hopeRow}>
+        <View style={styles.hopeChip}>
+          <Ionicons name="moon" size={26} color={Palette.sage} />
+        </View>
+        <View style={[styles.hopeChip, styles.hopeChipCenter]}>
+          <Ionicons name="hand-left" size={28} color={Palette.cream} />
+        </View>
+        <View style={styles.hopeChip}>
+          <Ionicons name="checkmark-circle" size={28} color={Palette.sage} />
+        </View>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   canvas: {
-    width: 230,
-    height: 190,
-    position: "relative",
+    width: 240,
+    height: 200,
     alignItems: "center",
     justifyContent: "center",
   },
-  domino: {
-    position: "absolute",
-    bottom: 28,
-    width: 28,
-    height: 88,
-    borderRadius: 6,
-    backgroundColor: "#FFFFFF",
+  halo: {
+    width: 108,
+    height: 108,
+    borderRadius: 54,
+    backgroundColor: Palette.whiteSoft,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 3,
+    borderColor: Palette.sageMuted,
+    marginBottom: 18,
   },
-  dominoArrow: {
+  cascadeRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+  },
+  cascadeTile: {
+    width: 40,
+    height: 56,
+    borderRadius: 10,
+    backgroundColor: Palette.cream,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: Palette.sage,
+  },
+  gapRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 4,
+  },
+  gapPill: {
+    width: 44,
+    height: 64,
+    borderRadius: 12,
+    backgroundColor: Palette.cream,
+    borderWidth: 2,
+    borderColor: Palette.sageMuted,
+  },
+  gapPillLeft: {
+    transform: [{ rotate: "-8deg" }],
+  },
+  gapPillRight: {
+    transform: [{ rotate: "8deg" }],
+    opacity: 0.85,
+  },
+  gapChannel: {
+    width: 72,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 2,
+  },
+  clockBadge: {
     position: "absolute",
     right: 18,
     top: 18,
-    opacity: 0.9,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Palette.cream,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  hourglassTop: {
+  dawnGlow: {
     position: "absolute",
-    top: 18,
+    top: 28,
+    width: 160,
+    height: 80,
+    borderTopLeftRadius: 80,
+    borderTopRightRadius: 80,
+    backgroundColor: Palette.whiteSoft,
+  },
+  sunDisc: {
     width: 96,
-    height: 58,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
-    borderWidth: 8,
-    borderColor: "#FFFFFF",
-    borderBottomWidth: 0,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: Palette.sage,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 4,
+    borderColor: Palette.cream,
+    marginBottom: 16,
   },
-  hourglassNeck: {
-    position: "absolute",
-    top: 74,
-    width: 18,
-    height: 24,
-    backgroundColor: "#FFFFFF",
+  hopeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
   },
-  hourglassBottom: {
-    position: "absolute",
-    bottom: 18,
-    width: 96,
-    height: 58,
-    borderBottomLeftRadius: 12,
-    borderBottomRightRadius: 12,
-    borderWidth: 8,
-    borderColor: "#FFFFFF",
-    borderTopWidth: 0,
+  hopeChip: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Palette.cream,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  sandTop: {
-    position: "absolute",
-    top: 30,
-    width: 72,
-    height: 28,
-    backgroundColor: "rgba(255,255,255,0.55)",
-    borderRadius: 4,
+  hopeChipCenter: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Palette.sage,
+    borderWidth: 3,
+    borderColor: Palette.cream,
   },
-  sandStream: {
-    position: "absolute",
-    top: 78,
-    width: 6,
-    height: 28,
-    backgroundColor: "rgba(255,255,255,0.75)",
-    borderRadius: 3,
-  },
-  sandBottom: {
-    position: "absolute",
-    bottom: 28,
-    width: 72,
-    height: 18,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 4,
-  },
-  hourglassIcon: {
-    position: "absolute",
-    right: 24,
-    bottom: 24,
-    opacity: 0.85,
-  },
-  mountainBack: {
-    position: "absolute",
-    bottom: 10,
-    left: 16,
-    width: 0,
-    height: 0,
-    borderLeftWidth: 86,
-    borderRightWidth: 86,
-    borderBottomWidth: 132,
-    borderLeftColor: "transparent",
-    borderRightColor: "transparent",
-    borderBottomColor: "rgba(255,255,255,0.48)",
-  },
-  mountainFront: {
-    position: "absolute",
-    bottom: 10,
-    right: 8,
-    width: 0,
-    height: 0,
-    borderLeftWidth: 68,
-    borderRightWidth: 68,
-    borderBottomWidth: 104,
-    borderLeftColor: "transparent",
-    borderRightColor: "transparent",
-    borderBottomColor: "#FFFFFF",
-  },
-  flagPole: {
-    position: "absolute",
-    right: 72,
-    top: 10,
-    width: 7,
-    height: 90,
-    borderRadius: 4,
-    backgroundColor: "#FFFFFF",
-  },
-  flag: { position: "absolute", right: 23, top: 1 },
-  climber: { position: "absolute", left: 84, bottom: 34 },
 });

@@ -31,10 +31,15 @@ export interface OnboardingPastelView {
 
 /** Onboarding screen backgrounds — full-page tones use black-readable fills. */
 export class OnboardingPastelPalette {
+  /** True when the tone uses a dark fill with light foreground copy. */
+  static isDarkTone(tone: OnboardingPastelTone): boolean {
+    return tone === "hardRed" || tone === "deepBlue" || tone === "hope";
+  }
+
   static forTone(tone: OnboardingPastelTone, isDark: boolean): OnboardingPastelView {
     const colors = isDark ? darkColors : lightColors;
     const resolved = this.resolve(tone, colors);
-    const onDark = tone === "hardRed" || tone === "deepBlue" || tone === "hope";
+    const onDark = this.isDarkTone(tone);
     return {
       bg: resolved.background,
       surface: resolved.surface,

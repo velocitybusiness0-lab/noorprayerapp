@@ -7,10 +7,14 @@ import { OnboardingStep } from "@/features/onboarding/onboarding.types";
 
 interface OnboardingHopeScreenStepProps {
   step: OnboardingStep;
+  onTypingComplete?: () => void;
 }
 
 /** Green hope screen with typing reveal and a soft success animation. */
-export function OnboardingHopeScreenStep({ step }: OnboardingHopeScreenStepProps) {
+export function OnboardingHopeScreenStep({
+  step,
+  onTypingComplete,
+}: OnboardingHopeScreenStepProps) {
   return (
     <View style={styles.wrap}>
       <Animated.View entering={ZoomIn.duration(500).delay(80)} style={styles.iconWrap}>
@@ -23,6 +27,7 @@ export function OnboardingHopeScreenStep({ step }: OnboardingHopeScreenStepProps
         titleVariant="display"
         titleStyle={styles.title}
         bodyStyle={styles.body}
+        onComplete={onTypingComplete}
       />
 
       <Animated.View entering={FadeIn.duration(600).delay(1200)} style={styles.badge}>

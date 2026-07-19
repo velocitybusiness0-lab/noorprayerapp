@@ -1,5 +1,6 @@
 import React from "react";
 import { StyleSheet } from "react-native";
+import { ImpactFeedbackStyle } from "expo-haptics";
 import { Pressable } from "react-native-gesture-handler";
 import { useTheme } from "@/core/theme";
 import { haptics } from "@/core/haptics/HapticsManager";
@@ -32,14 +33,14 @@ export function OnboardingContinueButton({
       onPress={() => {
         if (disabled) return;
         if (__DEV__) console.info("[Onboarding] continue pressed", label);
+        haptics.impact(ImpactFeedbackStyle.Medium);
         onPress();
-        haptics.selection();
       }}
       style={({ pressed }) => [
         styles.button,
         {
           borderRadius: theme.radii.pill,
-          backgroundColor: backgroundColor ?? theme.colors.textPrimary,
+          backgroundColor: backgroundColor ?? theme.colors.accent,
           opacity: disabled ? 0.35 : pressed ? 0.88 : 1,
           transform: [{ scale: pressed && !disabled ? 0.98 : 1 }],
         },
@@ -47,7 +48,7 @@ export function OnboardingContinueButton({
     >
       <ThemedText
         variant="bodyStrong"
-        style={{ color: textColor ?? theme.colors.textInverse }}
+        style={{ color: textColor ?? theme.colors.onAccent }}
       >
         {label}
       </ThemedText>

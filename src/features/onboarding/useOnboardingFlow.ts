@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { OnboardingStepCatalog } from "./OnboardingStepCatalog";
 import { onboardingCompletionStore } from "./OnboardingCompletionStore";
+import { OnboardingNameAnswerKeys } from "./OnboardingNameAnswerKeys";
 import { OnboardingAnswers } from "./onboarding.types";
 
 interface OnboardingFlowState {
@@ -25,6 +26,9 @@ export function useOnboardingFlow(): OnboardingFlowState {
 
   const canContinue = useMemo(() => {
     if (!step) return false;
+    if (step.type === "name") {
+      return OnboardingNameAnswerKeys.canContinue(answers, step.id);
+    }
     if (!step.requiresSelection) return true;
 
     const value = answers[step.id];

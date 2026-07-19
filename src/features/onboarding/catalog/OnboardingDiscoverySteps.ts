@@ -13,35 +13,35 @@ export const ONBOARDING_DISCOVERY_STEPS: OnboardingStep[] = [
     id: "biggest-problem",
     type: "multi-choice",
     title: "What's your biggest problem?",
-    layout: "grid-2x2",
+    layout: "list",
     optionSpacing: "relaxed",
     requiresSelection: true,
     options: [
       { id: "procrastination", label: "Procrastination" },
       { id: "missing-prayers", label: "Missing prayers" },
       { id: "motivation", label: "Lack of motivation" },
-      { id: "forgetting", label: "Forgetting prayers" },
+      { id: "laziness", label: "Laziness" },
     ],
   },
   {
     id: "becoming-person",
     type: "multi-choice",
     title: "Are you becoming the person you want to be?",
-    layout: "stack-3",
+    layout: "list",
     optionSpacing: "relaxed",
     requiresSelection: true,
     options: [
-      { id: "proud", label: "I'm proud of my progress" },
-      { id: "improve", label: "I want to improve" },
       { id: "stuck", label: "I feel stuck" },
       { id: "change", label: "I need a change" },
+      { id: "improve", label: "I want to improve" },
+      { id: "proud", label: "I'm proud of my progress" },
     ],
   },
   {
     id: "proud-moment",
     type: "multi-choice",
     title: "When was the last time you felt proud of yourself?",
-    layout: "grid-2x2",
+    layout: "list",
     optionSpacing: "relaxed",
     requiresSelection: true,
     options: [
@@ -55,7 +55,7 @@ export const ONBOARDING_DISCOVERY_STEPS: OnboardingStep[] = [
     id: "why-change",
     type: "multi-choice",
     title: "Why does change matter to you?",
-    layout: "stack-3",
+    layout: "list",
     optionSpacing: "relaxed",
     requiresSelection: true,
     options: [
@@ -75,7 +75,7 @@ export const ONBOARDING_DISCOVERY_STEPS: OnboardingStep[] = [
   {
     id: "future-self",
     type: "comparison",
-    title: "Imagine yourself one year from now",
+    title: "Imagine yourself one year from now:",
     comparisonRows: [
       { positive: "5 daily prayers", negative: "Feeling lost" },
       { positive: "Purpose and discipline", negative: "Starting over every Monday" },
@@ -88,7 +88,7 @@ export const ONBOARDING_DISCOVERY_STEPS: OnboardingStep[] = [
     id: "prayer-consistency",
     type: "multi-choice",
     title: "How consistent are your prayers?",
-    layout: "grid-2x2",
+    layout: "list",
     optionSpacing: "relaxed",
     requiresSelection: true,
     options: [
@@ -102,11 +102,11 @@ export const ONBOARDING_DISCOVERY_STEPS: OnboardingStep[] = [
     id: "holding-back",
     type: "multi-choice",
     title: "What's the biggest thing holding you back?",
-    layout: "grid-2x2",
+    layout: "list",
     optionSpacing: "relaxed",
     requiresSelection: true,
     options: [
-      { id: "distractions", label: "Distractions" },
+      { id: "distractions", label: "Distracted" },
       { id: "schedule", label: "Bad schedule" },
       { id: "laziness", label: "Laziness" },
       { id: "motivation", label: "Motivation" },
@@ -123,8 +123,7 @@ export const ONBOARDING_DISCOVERY_STEPS: OnboardingStep[] = [
   {
     id: "missed-stats",
     type: "missed-graph",
-    title: "On average, you miss",
     continueLabel: "Continue",
-    pastel: "hardRed",
+    pastel: "default",
   },
 ];

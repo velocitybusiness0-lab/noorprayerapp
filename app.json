@@ -76,7 +76,8 @@
         }
       ],
       "@bacons/apple-targets",
-      "./plugins/withExcludeIosNativeModules.js"
+      "./plugins/withExcludeIosNativeModules.js",
+      "./plugins/withAlarmKitOpenAppIntents.js"
     ],
     "experiments": {
       "typedRoutes": true

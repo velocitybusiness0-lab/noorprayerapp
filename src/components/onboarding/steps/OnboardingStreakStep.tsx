@@ -17,7 +17,10 @@ import { ThemedText } from "@/components/primitives/ThemedText";
 import { OnboardingStep } from "@/features/onboarding/onboarding.types";
 
 const DAYS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"] as const;
-const DAY_DELAY_MS = 420;
+/** ~25% snappier than the original 420ms day tick. */
+const DAY_DELAY_MS = 315;
+const FLAME_PULSE_MS = 520;
+const DAY_FADE_MS = 200;
 
 interface OnboardingStreakStepProps {
   step: OnboardingStep;
@@ -42,8 +45,14 @@ export function OnboardingStreakStep({ step }: OnboardingStreakStepProps) {
 
     flameScale.value = withRepeat(
       withSequence(
-        withTiming(1.12, { duration: 700, easing: Easing.inOut(Easing.ease) }),
-        withTiming(1, { duration: 700, easing: Easing.inOut(Easing.ease) })
+        withTiming(1.12, {
+          duration: FLAME_PULSE_MS,
+          easing: Easing.inOut(Easing.ease),
+        }),
+        withTiming(1, {
+          duration: FLAME_PULSE_MS,
+          easing: Easing.inOut(Easing.ease),
+        })
       ),
       -1,
       false
@@ -85,7 +94,7 @@ export function OnboardingStreakStep({ step }: OnboardingStreakStepProps) {
                 {day}
               </ThemedText>
               <Animated.View
-                entering={done ? FadeIn.duration(260) : undefined}
+                entering={done ? FadeIn.duration(DAY_FADE_MS) : undefined}
                 style={[
                   styles.dayDot,
                   {

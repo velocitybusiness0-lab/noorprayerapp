@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import Animated, {
   Easing,
@@ -7,9 +7,11 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useTheme } from "@/core/theme";
-import { ONBOARDING_INK } from "@/features/onboarding/OnboardingPastelPalette";
 import { ThemedText } from "@/components/primitives/ThemedText";
+import { ONBOARDING_INK } from "@/features/onboarding/OnboardingPastelPalette";
+import { OnboardingCalculationChecklistProgress } from "@/features/onboarding/OnboardingCalculationChecklistProgress";
 import { OnboardingStep } from "@/features/onboarding/onboarding.types";
+import { OnboardingCalculationChecklist } from "./OnboardingCalculationChecklist";
 import { OnboardingCalculationQuoteRotator } from "./OnboardingCalculationQuoteRotator";
 
 interface OnboardingCalculationStepProps {
@@ -22,7 +24,7 @@ const DEFAULT_DURATION_MS = 6000;
 const QUOTE_INTERVAL_MS = 2000;
 const HEADER_TICK_MS = 50;
 
-/** Plan build with a linear progress bar and cross-fading faith quotes. */
+/** Plan build with rotating faith quotes, a progress bar, and a timed checklist. */
 export function OnboardingCalculationStep({
   step,
   onComplete,
@@ -30,11 +32,20 @@ export function OnboardingCalculationStep({
 }: OnboardingCalculationStepProps) {
   const theme = useTheme();
   const quotes = step.calculationQuotes ?? [];
+  const tasks = step.calculationTasks ?? [];
   const totalMs = step.calculationDurationMs ?? DEFAULT_DURATION_MS;
   const progress = useSharedValue(0);
   const [quoteIndex, setQuoteIndex] = useState(0);
+  const [checklistStatuses, setChecklistStatuses] = useState(() =>
+    new OnboardingCalculationChecklistProgress(tasks.length, totalMs).statusAt(0)
+  );
   const onCompleteRef = useRef(onComplete);
   const onHeaderProgressRef = useRef(onHeaderProgress);
+
+  const checklistProgress = useMemo(
+    () => new OnboardingCalculationChecklistProgress(tasks.length, totalMs),
+    [tasks.length, totalMs]
+  );
 
   useEffect(() => {
     onCompleteRef.current = onComplete;
@@ -44,6 +55,7 @@ export function OnboardingCalculationStep({
   useEffect(() => {
     progress.value = 0;
     setQuoteIndex(0);
+    setChecklistStatuses(checklistProgress.statusAt(0));
     onHeaderProgressRef.current?.(0);
 
     progress.value = withTiming(1, { duration: totalMs, easing: Easing.linear });
@@ -55,6 +67,11 @@ export function OnboardingCalculationStep({
       onHeaderProgressRef.current?.(value);
     }, HEADER_TICK_MS);
 
+    const checklistTimer = setInterval(() => {
+      const elapsed = Date.now() - startedAt;
+      setChecklistStatuses(checklistProgress.statusAt(elapsed));
+    }, OnboardingCalculationChecklistProgress.tickMs);
+
     const quoteTimers = Array.from({ length: quotes.length }, (_, index) => {
       if (index === 0) return null;
       return setTimeout(() => setQuoteIndex(index), index * QUOTE_INTERVAL_MS);
@@ -62,18 +79,21 @@ export function OnboardingCalculationStep({
 
     const done = setTimeout(() => {
       clearInterval(headerTimer);
+      clearInterval(checklistTimer);
+      setChecklistStatuses(checklistProgress.statusAt(totalMs));
       onHeaderProgressRef.current?.(1);
       onCompleteRef.current();
     }, totalMs);
 
     return () => {
       clearInterval(headerTimer);
+      clearInterval(checklistTimer);
       quoteTimers.forEach((timer) => {
         if (timer) clearTimeout(timer);
       });
       clearTimeout(done);
     };
-  }, [progress, quotes.length, step.id, totalMs]);
+  }, [checklistProgress, progress, quotes.length, step.id, totalMs]);
 
   const barStyle = useAnimatedStyle(() => ({
     width: `${progress.value * 100}%`,
@@ -83,10 +103,6 @@ export function OnboardingCalculationStep({
 
   return (
     <View style={styles.wrap}>
-      <ThemedText variant="caption" style={styles.kicker}>
-        {step.title}
-      </ThemedText>
-
       {activeQuote ? (
         <OnboardingCalculationQuoteRotator key={quoteIndex} quote={activeQuote} />
       ) : (
@@ -103,10 +119,9 @@ export function OnboardingCalculationStep({
             style={[styles.fill, { backgroundColor: ONBOARDING_INK }, barStyle]}
           />
         </View>
-        <ThemedText variant="caption" style={styles.stepLabel}>
-          {`${Math.min(quoteIndex + 1, quotes.length)} of ${quotes.length}`}
-        </ThemedText>
       </View>
+
+      <OnboardingCalculationChecklist tasks={tasks} statuses={checklistStatuses} />
     </View>
   );
 }
@@ -117,17 +132,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 24,
-    gap: 28,
-  },
-  kicker: {
-    color: ONBOARDING_INK,
-    opacity: 0.55,
-    textAlign: "center",
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
+    gap: 24,
   },
   fallback: {
-    minHeight: 180,
+    minHeight: 132,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -137,9 +145,8 @@ const styles = StyleSheet.create({
   },
   progressBlock: {
     width: "100%",
-    maxWidth: 280,
+    maxWidth: 320,
     alignItems: "center",
-    gap: 10,
   },
   track: {
     width: "100%",
@@ -150,9 +157,5 @@ const styles = StyleSheet.create({
   fill: {
     height: "100%",
     borderRadius: 999,
-  },
-  stepLabel: {
-    color: ONBOARDING_INK,
-    opacity: 0.55,
   },
 });

@@ -1,25 +1,32 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { ONBOARDING_INK } from "@/features/onboarding/OnboardingPastelPalette";
+import { OnboardingContentLayout } from "@/features/onboarding/OnboardingContentLayout";
 import { ThemedText } from "@/components/primitives/ThemedText";
 import { OnboardingStep } from "@/features/onboarding/onboarding.types";
+import { OnboardingTypingReveal } from "../OnboardingTypingReveal";
 
 interface OnboardingMessageStepProps {
   step: OnboardingStep;
+  onTypingComplete?: () => void;
 }
 
-/** Centered full-page message — no card box. */
-export function OnboardingMessageStep({ step }: OnboardingMessageStepProps) {
+/** Full-page message — typing reveal centered; optional upper placement. */
+export function OnboardingMessageStep({
+  step,
+  onTypingComplete,
+}: OnboardingMessageStepProps) {
+  const upper = step.contentPlacement === "upper";
+
   return (
-    <View style={styles.center}>
-      <ThemedText variant="title" style={styles.title}>
-        {step.title}
-      </ThemedText>
-      {step.body ? (
-        <ThemedText variant="body" style={styles.body}>
-          {step.body}
-        </ThemedText>
-      ) : null}
+    <View style={[styles.center, upper && styles.upper]}>
+      <OnboardingTypingReveal
+        title={step.title ?? ""}
+        body={step.body}
+        titleStyle={styles.title}
+        bodyStyle={styles.body}
+        onComplete={onTypingComplete}
+      />
       {step.checks?.map((line) => (
         <ThemedText key={line} variant="bodyStrong" style={styles.check}>
           ✓ {line}
@@ -38,6 +45,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 12,
     gap: 14,
+  },
+  upper: {
+    justifyContent: "flex-start",
+    paddingTop: OnboardingContentLayout.centeredContentTopPadding + 24,
   },
   title: {
     ...ink,

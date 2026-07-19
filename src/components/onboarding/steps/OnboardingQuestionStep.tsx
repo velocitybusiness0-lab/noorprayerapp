@@ -1,8 +1,9 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { ONBOARDING_INK } from "@/features/onboarding/OnboardingPastelPalette";
+import { OnboardingOptionsPlacement } from "@/features/onboarding/OnboardingOptionsPlacement";
 import { ThemedText } from "@/components/primitives/ThemedText";
-import { OnboardingOptionGrid } from "../OnboardingOptionGrid";
+import { OnboardingOptionList } from "../OnboardingOptionList";
 import { OnboardingAnswers, OnboardingStep } from "@/features/onboarding/onboarding.types";
 
 interface OnboardingQuestionStepProps {
@@ -11,8 +12,12 @@ interface OnboardingQuestionStepProps {
   onAnswer: (stepId: string, value: string[]) => void;
 }
 
-/** Multi select question with title lower on screen. */
-export function OnboardingQuestionStep({ step, answers, onAnswer }: OnboardingQuestionStepProps) {
+/** Multi/single select question with list-style answer rows. */
+export function OnboardingQuestionStep({
+  step,
+  answers,
+  onAnswer,
+}: OnboardingQuestionStepProps) {
   const selected = (answers[step.id] as string[] | undefined) ?? [];
 
   return (
@@ -20,12 +25,16 @@ export function OnboardingQuestionStep({ step, answers, onAnswer }: OnboardingQu
       <ThemedText variant="heading" style={styles.title}>
         {step.title}
       </ThemedText>
-      <View style={styles.options}>
+      <View
+        style={[
+          styles.options,
+          OnboardingOptionsPlacement.resolve(step.optionsPlacement),
+        ]}
+      >
         {step.options ? (
-          <OnboardingOptionGrid
+          <OnboardingOptionList
             multi
             options={step.options}
-            layout={step.layout ?? "grid-2x2"}
             spacing={step.optionSpacing}
             selectedIds={selected}
             onSelect={(id) => {
@@ -45,17 +54,15 @@ const styles = StyleSheet.create({
   wrap: {
     flex: 1,
     width: "100%",
-    paddingTop: 48,
   },
   title: {
     color: ONBOARDING_INK,
     textAlign: "center",
-    marginBottom: 28,
+    marginBottom: 48,
     paddingHorizontal: 8,
   },
   options: {
     flex: 1,
-    justifyContent: "center",
     paddingBottom: 16,
   },
 });

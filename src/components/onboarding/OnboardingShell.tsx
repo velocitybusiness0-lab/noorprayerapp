@@ -7,6 +7,8 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/core/theme";
+import { OnboardingContentLayout } from "@/features/onboarding/OnboardingContentLayout";
+import { OnboardingContinueButtonAppearance } from "@/features/onboarding/OnboardingContinueButtonAppearance";
 import {
   ONBOARDING_INK,
   OnboardingPastelPalette,
@@ -25,6 +27,8 @@ interface OnboardingShellProps {
   continueDisabled?: boolean;
   hideContinue?: boolean;
   keyboardAvoid?: boolean;
+  /** Vertically center step body; uses a tighter top inset. */
+  centerContent?: boolean;
   pastel?: OnboardingPastelTone;
   onBack: () => void;
   onContinue: () => void;
@@ -43,6 +47,7 @@ export function OnboardingShell({
   continueDisabled,
   hideContinue = false,
   keyboardAvoid = false,
+  centerContent = false,
   pastel = "default",
   onBack,
   onContinue,
@@ -51,9 +56,19 @@ export function OnboardingShell({
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const pastelColors = OnboardingPastelPalette.forTone(pastel, theme.isDark);
+  const continueColors = OnboardingContinueButtonAppearance.colors(
+    pastel,
+    theme.colors.accent,
+    theme.colors.onAccent
+  );
   const trackColor = "rgba(61,56,50,0.12)";
   const footerPad = insets.bottom + theme.spacing.lg;
-  const footerBlock = hideContinue ? 0 : FOOTER_CONTENT_HEIGHT + footerPad;
+  const footerInFlow = keyboardAvoid && !hideContinue;
+  const footerBlock =
+    hideContinue || footerInFlow ? 0 : FOOTER_CONTENT_HEIGHT + footerPad;
+  const contentTopPadding = centerContent
+    ? OnboardingContentLayout.centeredContentTopPadding
+    : OnboardingContentLayout.contentTopPadding;
 
   const body = (
     <View style={styles.fill}>
@@ -81,7 +96,13 @@ export function OnboardingShell({
       )}
 
       <View
-        style={[styles.content, { paddingBottom: footerBlock }]}
+        style={[
+          styles.content,
+          {
+            paddingTop: contentTopPadding,
+            paddingBottom: footerBlock,
+          },
+        ]}
         pointerEvents="box-none"
       >
         {children}
@@ -91,7 +112,7 @@ export function OnboardingShell({
         <View
           pointerEvents="box-none"
           style={[
-            styles.footer,
+            footerInFlow ? styles.footerInFlow : styles.footer,
             {
               paddingBottom: footerPad,
               backgroundColor: pastelColors.bg,
@@ -101,8 +122,8 @@ export function OnboardingShell({
           <OnboardingContinueButton
             label={continueLabel}
             disabled={continueDisabled}
-            backgroundColor={ONBOARDING_INK}
-            textColor="#FFFFFF"
+            backgroundColor={continueColors.backgroundColor}
+            textColor={continueColors.textColor}
             onPress={onContinue}
           />
         </View>
@@ -145,5 +166,10 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     zIndex: 100,
     elevation: 100,
+  },
+  /** In-flow footer so KeyboardAvoidingView can lift Continue above the keyboard. */
+  footerInFlow: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
   },
 });

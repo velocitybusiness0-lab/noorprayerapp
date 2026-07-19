@@ -1,4 +1,5 @@
-export type OnboardingOptionLayout = "grid-2x2" | "grid-2" | "stack-3" | "stack-2";
+/** Question answers always render as full-width list rows. */
+export type OnboardingOptionLayout = "list";
 
 export type OnboardingPastelTone = import("./OnboardingPastelPalette").OnboardingPastelTone;
 
@@ -16,7 +17,9 @@ export type OnboardingStepType =
   | "downtrend"
   | "slideshow"
   | "hope-screen"
-  | "streak";
+  | "streak"
+  | "commitment"
+  | "benefits-graph";
 
 export interface OnboardingOption {
   id: string;
@@ -72,7 +75,13 @@ export interface OnboardingStep {
   calculationQuotes?: OnboardingCalculationQuote[];
   calculationDurationMs?: number;
   optionSpacing?: "normal" | "relaxed" | "loose";
+  /** Vertical placement of the option block within the content area. */
+  optionsPlacement?: "start" | "center" | "end";
+  /** Vertical placement for centered message content. */
+  contentPlacement?: "center" | "upper";
   checks?: string[];
+  /** Optional brand mark shown above slideshow content (e.g. Miraj welcome). */
+  brandLabel?: string;
   pastel?: OnboardingPastelTone;
 }
 

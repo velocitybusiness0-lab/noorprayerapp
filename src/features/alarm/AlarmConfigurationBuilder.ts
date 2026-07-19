@@ -1,6 +1,7 @@
 import { ObligatoryPrayer } from "@/features/prayerTimes/prayerTimes.types";
 import { sfSymbolForSlot } from "@/features/widgets/widgetSymbols";
 import type { AlarmConfiguration } from "react-native-ios-alarmkit";
+import { alarmAlertPresentationFactory } from "./AlarmAlertPresentationFactory";
 
 export interface ScheduleAlarmOptions {
   title: string;
@@ -14,6 +15,7 @@ const WHITE = "#FFFFFF";
 /**
  * Builds AlarmKit configs for prayer alarms.
  * Alert-only (no snooze/X cancel) — sound stops only after object hunt.
+ * Stop + secondary both open Miraj via native LiveActivityIntent.
  */
 export class AlarmConfigurationBuilder {
   build(
@@ -25,7 +27,7 @@ export class AlarmConfigurationBuilder {
     return this.buildAlertOnly(date, alarmKitId, logicalId, options);
   }
 
-  /** Prayer alarms: single stop/open control, no snooze countdown cancel (X). */
+  /** Prayer alarms: stop + object hunt open Miraj; no snooze countdown cancel (X). */
   buildAlertOnly(
     date: Date,
     alarmKitId: string,
@@ -44,16 +46,7 @@ export class AlarmConfigurationBuilder {
       schedule: { type: "fixed", date: date.getTime() },
       attributes: {
         presentation: {
-          alert: {
-            title: options.title,
-            stopButton: {
-              // System still stops sound on tap; continuity controller re-arms
-              // until object hunt completes.
-              text: "Open scan",
-              textColor: WHITE,
-              systemImageName: "camera.viewfinder",
-            },
-          },
+          alert: alarmAlertPresentationFactory.build(options.title),
         },
         metadata: this.metadata(alarmKitId, logicalId, options.slot),
         tintColor: options.tintColor ?? WHITE,

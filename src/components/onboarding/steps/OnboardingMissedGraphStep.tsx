@@ -10,7 +10,8 @@ import Animated, {
 } from "react-native-reanimated";
 import { ThemedText } from "@/components/primitives/ThemedText";
 import { useLinearCountUp } from "../useLinearCountUp";
-import { OnboardingPastelPalette } from "@/features/onboarding/OnboardingPastelPalette";
+import { OnboardingMissedBarFillPolicy } from "@/features/onboarding/OnboardingMissedBarFillPolicy";
+import { OnboardingMissedGraphTheme } from "@/features/onboarding/OnboardingMissedGraphTheme";
 import { OnboardingMissedImpactCopy } from "@/features/onboarding/OnboardingMissedImpactCopy";
 import { OnboardingStatsCalculator } from "@/features/onboarding/OnboardingStatsCalculator";
 import { OnboardingAnswers, OnboardingStep } from "@/features/onboarding/onboarding.types";
@@ -23,75 +24,99 @@ interface OnboardingMissedGraphStepProps {
 const BAR_LABELS = ["Day", "Week", "Month", "Year"] as const;
 const BAR_MS = 750;
 const STAGGER_MS = 160;
-const IMPACT_DELAY_MS = BAR_MS + STAGGER_MS * 3 + 450;
+const SUB_DELAY_MS = 520;
 
-/** Red stats page with high-contrast white copy and chart card. */
+/** Cream stats page — red bars and red yearly total, black labels. */
 export function OnboardingMissedGraphStep({ step, answers }: OnboardingMissedGraphStepProps) {
-  const palette = OnboardingPastelPalette.forTone(step.pastel ?? "hardRed", false);
-  const textColor = palette.text;
-  const mutedColor = palette.textMuted;
   const daily = typeof answers["missed-per-day"] === "number" ? answers["missed-per-day"] : 0;
   const stats = OnboardingStatsCalculator.fromDailyMissed(daily);
   const values = [stats.daily, stats.weekly, stats.monthly, stats.yearly];
-  const maxVal = Math.max(...values, 1);
-  const [showImpact, setShowImpact] = useState(false);
+  const [showSub, setShowSub] = useState(false);
+  const [animationEpoch, setAnimationEpoch] = useState(0);
 
   const yearlyDisplay = useLinearCountUp(stats.yearly, 1000, 120);
   const heroOpacity = useSharedValue(0);
 
   useEffect(() => {
-    setShowImpact(false);
+    setShowSub(false);
+    setAnimationEpoch((epoch) => epoch + 1);
     heroOpacity.value = 0;
     heroOpacity.value = withDelay(80, withTiming(1, { duration: 420, easing: Easing.linear }));
 
-    const timer = setTimeout(() => setShowImpact(true), IMPACT_DELAY_MS);
+    const timer = setTimeout(() => setShowSub(true), SUB_DELAY_MS);
     return () => clearTimeout(timer);
   }, [daily, heroOpacity]);
 
   const heroStyle = useAnimatedStyle(() => ({ opacity: heroOpacity.value }));
-  const punchline = OnboardingMissedImpactCopy.punchline(daily, stats.yearly);
+  const costTitle = OnboardingMissedImpactCopy.costTitle();
+  const costSub = OnboardingMissedImpactCopy.costSub(daily);
 
   return (
     <ScrollView
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
     >
-      <ThemedText variant="heading" style={[styles.title, { color: textColor }]}>
-        {step.title}
-      </ThemedText>
-
-      <Animated.View style={[styles.hero, heroStyle]}>
-        <ThemedText variant="display" style={[styles.stat, { color: textColor }]}>
-          {yearlyDisplay}
-        </ThemedText>
-        <ThemedText variant="bodyStrong" style={[styles.subtitle, { color: mutedColor }]}>
-          namaz missed this year
-        </ThemedText>
-      </Animated.View>
-
-      <View style={styles.chartCard}>
-        <View style={styles.chart}>
-          {values.map((val, index) => (
-            <BarColumn
-              key={BAR_LABELS[index]}
-              label={BAR_LABELS[index]}
-              value={val}
-              ratio={val / maxVal}
-              delay={200 + index * STAGGER_MS}
-              textColor={textColor}
-            />
-          ))}
-        </View>
-      </View>
-
-      <View style={styles.impactSlot}>
-        {showImpact ? (
-          <Animated.View entering={FadeIn.duration(500).easing(Easing.linear)}>
-            <ThemedText variant="bodyStrong" style={[styles.impactBody, { color: textColor }]}>
-              {punchline}
-            </ThemedText>
-          </Animated.View>
+      <View style={styles.centeredBlock}>
+        {step.title ? (
+          <ThemedText
+            variant="heading"
+            style={[styles.title, { color: OnboardingMissedGraphTheme.label }]}
+          >
+            {step.title}
+          </ThemedText>
         ) : null}
+
+        <Animated.View style={[styles.hero, heroStyle]}>
+          <ThemedText
+            variant="display"
+            style={[styles.stat, { color: OnboardingMissedGraphTheme.totalRed }]}
+          >
+            {OnboardingMissedImpactCopy.formatCount(yearlyDisplay)}
+          </ThemedText>
+        </Animated.View>
+
+        <View
+          style={[
+            styles.chartCard,
+            {
+              backgroundColor: OnboardingMissedGraphTheme.chartSurface,
+              borderColor: OnboardingMissedGraphTheme.chartBorder,
+            },
+          ]}
+        >
+          <View style={styles.chart}>
+            {values.map((val, index) => (
+              <BarColumn
+                key={`${BAR_LABELS[index]}-${animationEpoch}`}
+                label={BAR_LABELS[index]}
+                value={val}
+                fillRatio={OnboardingMissedBarFillPolicy.fillRatio(val)}
+                delay={200 + index * STAGGER_MS}
+              />
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.costBlock}>
+          <ThemedText
+            variant="bodyStrong"
+            style={[styles.costTitle, { color: OnboardingMissedGraphTheme.label }]}
+          >
+            {costTitle}
+          </ThemedText>
+          <View style={styles.subSlot}>
+            {showSub ? (
+              <Animated.View entering={FadeIn.duration(420).easing(Easing.linear)}>
+                <ThemedText
+                  variant="body"
+                  style={[styles.costSub, { color: OnboardingMissedGraphTheme.mutedLabel }]}
+                >
+                  {costSub}
+                </ThemedText>
+              </Animated.View>
+            ) : null}
+          </View>
+        </View>
       </View>
     </ScrollView>
   );
@@ -100,15 +125,13 @@ export function OnboardingMissedGraphStep({ step, answers }: OnboardingMissedGra
 function BarColumn({
   label,
   value,
-  ratio,
+  fillRatio,
   delay,
-  textColor,
 }: {
   label: string;
   value: number;
-  ratio: number;
+  fillRatio: number;
   delay: number;
-  textColor: string;
 }) {
   const height = useSharedValue(0);
   const displayValue = useLinearCountUp(value, BAR_MS, delay);
@@ -117,23 +140,40 @@ function BarColumn({
     height.value = 0;
     height.value = withDelay(
       delay,
-      withTiming(ratio, { duration: BAR_MS, easing: Easing.out(Easing.cubic) })
+      withTiming(fillRatio, { duration: BAR_MS, easing: Easing.out(Easing.cubic) })
     );
-  }, [delay, height, ratio]);
+  }, [delay, fillRatio, height]);
 
   const animatedHeight = useAnimatedStyle(() => ({
-    height: `${Math.max(height.value * 100, 8)}%`,
+    height: `${height.value * 100}%`,
   }));
 
   return (
     <View style={styles.column}>
-      <ThemedText variant="caption" style={[styles.valueLabel, { color: textColor }]}>
-        {displayValue}
+      <ThemedText
+        variant="caption"
+        style={[styles.valueLabel, { color: OnboardingMissedGraphTheme.label }]}
+      >
+        {OnboardingMissedImpactCopy.formatCount(displayValue)}
       </ThemedText>
-      <View style={styles.barTrack}>
-        <Animated.View style={[styles.barFill, animatedHeight]} />
+      <View
+        style={[
+          styles.barTrack,
+          { backgroundColor: OnboardingMissedGraphTheme.barTrack },
+        ]}
+      >
+        <Animated.View
+          style={[
+            styles.barFill,
+            { backgroundColor: OnboardingMissedGraphTheme.barRed },
+            animatedHeight,
+          ]}
+        />
       </View>
-      <ThemedText variant="caption" style={[styles.axisLabel, { color: textColor }]}>
+      <ThemedText
+        variant="caption"
+        style={[styles.axisLabel, { color: OnboardingMissedGraphTheme.label }]}
+      >
         {label}
       </ThemedText>
     </View>
@@ -143,9 +183,13 @@ function BarColumn({
 const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 8,
-    paddingBottom: 12,
     justifyContent: "center",
+    paddingHorizontal: 8,
+    paddingVertical: 12,
+  },
+  centeredBlock: {
+    width: "100%",
+    alignItems: "center",
   },
   title: {
     textAlign: "center",
@@ -153,16 +197,13 @@ const styles = StyleSheet.create({
   },
   hero: {
     alignItems: "center",
-    gap: 4,
     marginBottom: 20,
+    width: "100%",
   },
   stat: {
     fontVariant: ["tabular-nums"],
     fontSize: 56,
     lineHeight: 60,
-  },
-  subtitle: {
-    textAlign: "center",
   },
   chartCard: {
     width: "100%",
@@ -171,9 +212,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 18,
-    backgroundColor: "rgba(255,255,255,0.14)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.22)",
   },
   chart: {
     flexDirection: "row",
@@ -200,26 +239,34 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     overflow: "hidden",
     justifyContent: "flex-end",
-    backgroundColor: "rgba(255,255,255,0.22)",
   },
   barFill: {
     width: "100%",
     borderRadius: 10,
-    backgroundColor: "#FFFFFF",
   },
   axisLabel: {
     fontWeight: "600",
     fontSize: 12,
   },
-  impactSlot: {
-    minHeight: 88,
-    justifyContent: "center",
-    paddingTop: 18,
-    paddingHorizontal: 6,
+  costBlock: {
+    alignItems: "center",
+    gap: 6,
+    marginTop: 20,
+    width: "100%",
+    paddingHorizontal: 8,
   },
-  impactBody: {
+  costTitle: {
     textAlign: "center",
-    lineHeight: 24,
-    fontSize: 16,
+    fontSize: 18,
+  },
+  subSlot: {
+    minHeight: 40,
+    justifyContent: "flex-start",
+    paddingHorizontal: 12,
+  },
+  costSub: {
+    textAlign: "center",
+    lineHeight: 22,
+    fontSize: 15,
   },
 });

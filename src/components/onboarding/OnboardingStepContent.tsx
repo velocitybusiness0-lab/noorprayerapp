@@ -18,6 +18,9 @@ import { OnboardingDowntrendStep } from "./steps/OnboardingDowntrendStep";
 import { OnboardingHopeScreenStep } from "./steps/OnboardingHopeScreenStep";
 import { OnboardingSlideshowStep } from "./steps/OnboardingSlideshowStep";
 import { OnboardingStreakStep } from "./steps/OnboardingStreakStep";
+import { OnboardingCommitmentStep } from "./steps/OnboardingCommitmentStep";
+import { OnboardingBenefitsGraphStep } from "./steps/OnboardingBenefitsGraphStep";
+import { OnboardingNameAnswerKeys } from "@/features/onboarding/OnboardingNameAnswerKeys";
 
 interface OnboardingStepContentProps {
   step: OnboardingStep;
@@ -25,8 +28,11 @@ interface OnboardingStepContentProps {
   onAnswer: (stepId: string, value: string | string[] | number) => void;
   onCalculationComplete?: () => void;
   onCalculationProgress?: (value: number) => void;
+  slideshowIndex?: number;
   onSlideshowSlideChange?: (index: number) => void;
   onComparisonAnimationComplete?: () => void;
+  onTypingComplete?: () => void;
+  onCommitmentLockIn?: () => void;
 }
 
 /** Routes each onboarding step to its focused renderer. */
@@ -36,8 +42,11 @@ export function OnboardingStepContent({
   onAnswer,
   onCalculationComplete,
   onCalculationProgress,
+  slideshowIndex = 0,
   onSlideshowSlideChange,
   onComparisonAnimationComplete,
+  onTypingComplete,
+  onCommitmentLockIn,
 }: OnboardingStepContentProps) {
   if (step.type === "welcome") {
     return <OnboardingWelcomeStep step={step} />;
@@ -50,7 +59,9 @@ export function OnboardingStepContent({
   }
 
   if (step.type === "message") {
-    return <OnboardingMessageStep step={step} />;
+    return (
+      <OnboardingMessageStep step={step} onTypingComplete={onTypingComplete} />
+    );
   }
 
   if (step.type === "comparison") {
@@ -84,11 +95,16 @@ export function OnboardingStepContent({
 
   if (step.type === "name") {
     const name = (answers[step.id] as string | undefined) ?? "";
+    const age = (answers[OnboardingNameAnswerKeys.age] as string | undefined) ?? "";
     return (
       <OnboardingNameStep
         step={step}
-        value={name}
-        onChange={(text) => onAnswer(step.id, text.trimStart())}
+        nameValue={name}
+        ageValue={age}
+        onNameChange={(text) => onAnswer(step.id, text.trimStart())}
+        onAgeChange={(text) =>
+          onAnswer(OnboardingNameAnswerKeys.age, text.replace(/[^0-9]/g, ""))
+        }
       />
     );
   }
@@ -109,16 +125,38 @@ export function OnboardingStepContent({
 
   if (step.type === "slideshow") {
     return (
-      <OnboardingSlideshowStep step={step} onActiveSlideChange={onSlideshowSlideChange} />
+      <OnboardingSlideshowStep
+        step={step}
+        activeSlideIndex={slideshowIndex}
+        onActiveSlideChange={onSlideshowSlideChange}
+      />
     );
   }
 
   if (step.type === "hope-screen") {
-    return <OnboardingHopeScreenStep step={step} />;
+    return (
+      <OnboardingHopeScreenStep
+        step={step}
+        onTypingComplete={onTypingComplete}
+      />
+    );
   }
 
   if (step.type === "streak") {
     return <OnboardingStreakStep step={step} />;
+  }
+
+  if (step.type === "commitment") {
+    return (
+      <OnboardingCommitmentStep
+        step={step}
+        onLockIn={() => onCommitmentLockIn?.()}
+      />
+    );
+  }
+
+  if (step.type === "benefits-graph") {
+    return <OnboardingBenefitsGraphStep step={step} />;
   }
 
   return null;

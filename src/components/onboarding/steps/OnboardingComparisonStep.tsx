@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   positive: { color: "#16A34A", textAlign: "center" },
-  negative: { color: ONBOARDING_INK, opacity: 0.55, textAlign: "center" },
+  negative: { color: "#DC2626", textAlign: "center" },
   footer: {
     color: ONBOARDING_INK,
     opacity: 0.7,

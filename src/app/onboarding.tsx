@@ -5,6 +5,9 @@ import { OnboardingShell } from "@/components/onboarding/OnboardingShell";
 import { OnboardingStepContent } from "@/components/onboarding/OnboardingStepContent";
 import { OnboardingStepCatalog } from "@/features/onboarding/OnboardingStepCatalog";
 import { OnboardingProgressPolicy } from "@/features/onboarding/OnboardingProgressPolicy";
+import { OnboardingSlideshowController } from "@/features/onboarding/OnboardingSlideshowController";
+import { OnboardingNameAnswerKeys } from "@/features/onboarding/OnboardingNameAnswerKeys";
+import { OnboardingContinueInteractionGate } from "@/features/onboarding/OnboardingContinueInteractionGate";
 import { onboardingPermissionCoordinator } from "@/features/onboarding/OnboardingPermissionCoordinator";
 import { useOnboardingFlow } from "@/features/onboarding/useOnboardingFlow";
 import { useHideTabBar } from "@/features/navigation/useHideTabBar";
@@ -23,7 +26,9 @@ export default function OnboardingScreen() {
   useEffect(() => {
     if (step?.type !== "calculation") setCalcProgress(0);
     if (step?.type !== "slideshow") setSlideshowIndex(0);
-    setStepInteractionReady(step?.type !== "comparison");
+    setStepInteractionReady(
+      !OnboardingContinueInteractionGate.needsReady(step?.type)
+    );
   }, [step?.id, step?.type]);
 
   const showProgressBar = OnboardingProgressPolicy.shouldShowProgressBar(
@@ -46,13 +51,15 @@ export default function OnboardingScreen() {
     return OnboardingProgressPolicy.progressOpacityDuringCalculation(calcProgress);
   }, [calcProgress, step?.type]);
 
-  const handleComparisonComplete = useCallback(() => {
+  const handleInteractionReady = useCallback(() => {
     setStepInteractionReady(true);
   }, []);
 
   const finish = useCallback(() => {
-    flow.complete();
-    router.replace("/(tabs)");
+    void onboardingPermissionCoordinator.requestAll().finally(() => {
+      flow.complete();
+      router.replace("/(tabs)");
+    });
   }, [flow.complete]);
 
   const advance = useCallback(() => {
@@ -76,25 +83,30 @@ export default function OnboardingScreen() {
   const handleContinue = useCallback(() => {
     if (!step) return;
 
-    if (step.type === "name") {
-      const name = flow.answers[step.id];
-      if (typeof name !== "string" || !name.trim()) return;
+    if (
+      step.type === "name" &&
+      !OnboardingNameAnswerKeys.canContinue(flow.answers, step.id)
+    ) {
+      return;
     }
 
     if (step.type === "slider" && typeof flow.answers[step.id] !== "number") {
       flow.setAnswer(step.id, step.min ?? 0);
     }
 
-    if (step.type === "feature-slideshow") {
-      void onboardingPermissionCoordinator.requestAll().finally(() => {
-        advance();
-      });
-      return;
+    if (step.type === "slideshow") {
+      const nextIndex = OnboardingSlideshowController.nextSlideIndex(
+        slideshowIndex,
+        OnboardingSlideshowController.slideCount(step.slides)
+      );
+      if (nextIndex !== null) {
+        setSlideshowIndex(nextIndex);
+        return;
+      }
     }
 
-    // Welcome and message steps advance immediately — no selection gate.
     advance();
-  }, [advance, flow.answers, flow.setAnswer, step]);
+  }, [advance, flow.answers, flow.setAnswer, slideshowIndex, step]);
 
   if (!step) {
     return (
@@ -104,35 +116,49 @@ export default function OnboardingScreen() {
     );
   }
 
-  const hideContinue = step.type === "calculation";
+  const hideContinue =
+    step.type === "calculation" || step.type === "commitment";
 
-  const continueDisabled =
-    step.type === "name"
-      ? !String(flow.answers[step.id] ?? "").trim()
-      : step.type === "comparison"
-        ? !stepInteractionReady
-        : !flow.canContinue;
-
-  const stepPastel =
-    step.type === "slideshow"
-      ? step.slides?.[0]?.pastel ?? step.pastel
-      : step.pastel;
+  const continueDisabled = OnboardingContinueInteractionGate.needsReady(
+    step.type
+  )
+    ? !stepInteractionReady
+    : !flow.canContinue;
 
   const shellPastel =
+    step.type === "missed-graph"
+      ? "default"
+      : step.type === "slideshow"
+        ? OnboardingSlideshowController.pastelAt(
+            step.slides,
+            slideshowIndex,
+            step.pastel ?? "hardRed"
+          )
+        : step.pastel;
+
+  const continueLabel =
     step.type === "slideshow"
-      ? step.slides?.[slideshowIndex]?.pastel ?? step.slides?.[0]?.pastel ?? "hardRed"
-      : stepPastel;
+      ? OnboardingSlideshowController.continueLabel(
+          slideshowIndex,
+          OnboardingSlideshowController.slideCount(step.slides),
+          step.continueLabel
+        )
+      : step.continueLabel;
 
   return (
     <OnboardingShell
       progress={headerProgress}
       progressOpacity={progressOpacity}
       showProgressBar={showProgressBar}
-      showBack={flow.stepIndex > 0 && step.type !== "calculation"}
-      continueLabel={step.continueLabel}
+      showBack={OnboardingProgressPolicy.shouldShowBack(step, flow.stepIndex)}
+      continueLabel={continueLabel}
       continueDisabled={continueDisabled}
       hideContinue={hideContinue}
       keyboardAvoid={step.type === "name"}
+      centerContent={
+        step.type === "missed-graph" ||
+        (step.type === "slideshow" && step.contentPlacement === "center")
+      }
       pastel={shellPastel ?? "default"}
       onBack={flow.goBack}
       onContinue={handleContinue}
@@ -144,8 +170,11 @@ export default function OnboardingScreen() {
         onAnswer={flow.setAnswer}
         onCalculationComplete={advance}
         onCalculationProgress={setCalcProgress}
+        slideshowIndex={slideshowIndex}
         onSlideshowSlideChange={setSlideshowIndex}
-        onComparisonAnimationComplete={handleComparisonComplete}
+        onComparisonAnimationComplete={handleInteractionReady}
+        onTypingComplete={handleInteractionReady}
+        onCommitmentLockIn={advance}
       />
     </OnboardingShell>
   );

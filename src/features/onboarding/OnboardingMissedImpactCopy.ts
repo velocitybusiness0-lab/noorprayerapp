@@ -1,22 +1,19 @@
 /** Impact copy for the missed salah reveal step. */
 export class OnboardingMissedImpactCopy {
-  static headline(daily: number, yearly: number): string {
-    if (daily <= 0) {
-      return "You are still in control. Protect your consistency.";
-    }
-    if (daily === 1) {
-      return `${yearly} prayers slipped away this year.`;
-    }
-    if (daily <= 3) {
-      return `${yearly} namaz missed. That is not small.`;
-    }
-    return `${yearly} chances to reset with Allah — gone.`;
+  static formatCount(value: number): string {
+    return value.toLocaleString("en-US");
   }
 
-  static punchline(daily: number, yearly: number): string {
+  /** Primary cost label under the bar chart. */
+  static costTitle(): string {
+    return "dua chances lost";
+  }
+
+  /** Supporting line under the chart tying namaz → lost connection. */
+  static costSub(daily: number): string {
     if (daily <= 0) {
-      return "Every salah is still a fresh chance to come back.";
+      return "every salah is still a chance to talk to Allah";
     }
-    return `${yearly} namaz missed means ${yearly} duaa chances you've lost.`;
+    return "every missed namaz is a dua you never made";
   }
 }

@@ -1,93 +1,166 @@
-import React from "react";
-import { Dimensions, FlatList, NativeScrollEvent, NativeSyntheticEvent, StyleSheet, View } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  Dimensions,
+  FlatList,
+  LayoutChangeEvent,
+  StyleSheet,
+  View,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, {
+  runOnJS,
   useAnimatedScrollHandler,
-  useAnimatedStyle,
-  useSharedValue,
 } from "react-native-reanimated";
 import { ThemedText } from "@/components/primitives/ThemedText";
-import { OnboardingPastelPalette } from "@/features/onboarding/OnboardingPastelPalette";
+import { OnboardingPageDotIndicator } from "@/components/onboarding/OnboardingPageDotIndicator";
+import {
+  ONBOARDING_INK,
+  OnboardingPastelPalette,
+} from "@/features/onboarding/OnboardingPastelPalette";
+import { OnboardingSlideshowController } from "@/features/onboarding/OnboardingSlideshowController";
 import { useTheme } from "@/core/theme";
 import { OnboardingStep, OnboardingSlide } from "@/features/onboarding/onboarding.types";
 import { OnboardingSlideGraphic } from "./OnboardingSlideGraphic";
 
 interface OnboardingSlideshowStepProps {
   step: OnboardingStep;
+  activeSlideIndex: number;
   onActiveSlideChange?: (index: number) => void;
 }
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const PAGE_WIDTH = SCREEN_WIDTH;
-const DOT = 8;
-const DOT_GAP = 10;
 
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList<OnboardingSlide>);
 
-/** Full-screen red → blue slideshow matching reference layout. */
+/**
+ * Full-bleed onboarding slideshow (urgency narrative or Miraj welcome).
+ * Pages are transparent so shell pastel owns the background.
+ */
 export function OnboardingSlideshowStep({
   step,
+  activeSlideIndex,
   onActiveSlideChange,
 }: OnboardingSlideshowStepProps) {
   const slides = step.slides ?? [];
-  const scrollX = useSharedValue(0);
+  const listRef = useRef<FlatList<OnboardingSlide>>(null);
+  const reportedIndexRef = useRef(activeSlideIndex);
+  const [pageHeight, setPageHeight] = useState(0);
+  const centerContent = step.contentPlacement === "center";
+  const activePastel = OnboardingSlideshowController.pastelAt(
+    slides,
+    activeSlideIndex,
+    step.pastel ?? "hardRed"
+  );
+  const darkDots = OnboardingPastelPalette.isDarkTone(activePastel);
+
+  useEffect(() => {
+    if (reportedIndexRef.current === activeSlideIndex) return;
+    reportedIndexRef.current = activeSlideIndex;
+    listRef.current?.scrollToOffset({
+      offset: activeSlideIndex * PAGE_WIDTH,
+      animated: true,
+    });
+  }, [activeSlideIndex]);
+
+  const emitIndex = (index: number) => {
+    const safeIndex = OnboardingSlideshowController.clampIndex(index, slides.length);
+    if (safeIndex === reportedIndexRef.current) return;
+    reportedIndexRef.current = safeIndex;
+    onActiveSlideChange?.(safeIndex);
+  };
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
-      scrollX.value = event.contentOffset.x;
+      const index = Math.round(event.contentOffset.x / PAGE_WIDTH);
+      runOnJS(emitIndex)(index);
     },
   });
 
-  const handleScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const index = Math.round(event.nativeEvent.contentOffset.x / PAGE_WIDTH);
-    onActiveSlideChange?.(index);
+  const onListLayout = (event: LayoutChangeEvent) => {
+    const next = Math.round(event.nativeEvent.layout.height);
+    if (next > 0 && next !== pageHeight) setPageHeight(next);
   };
-
-  const indicatorStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: (scrollX.value / PAGE_WIDTH) * (DOT + DOT_GAP) }],
-  }));
-
-  const dotTrackWidth = slides.length * DOT + (slides.length - 1) * DOT_GAP;
 
   return (
     <View style={styles.wrap}>
+      {step.brandLabel && !centerContent ? (
+        <ThemedText variant="title" style={styles.brand}>
+          {step.brandLabel}
+        </ThemedText>
+      ) : null}
+
       <AnimatedFlatList
+        ref={listRef}
+        style={styles.list}
         data={slides}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         keyExtractor={(_, i) => String(i)}
         onScroll={scrollHandler}
-        onMomentumScrollEnd={handleScrollEnd}
+        onLayout={onListLayout}
         scrollEventThrottle={16}
         decelerationRate="fast"
         snapToInterval={PAGE_WIDTH}
         disableIntervalMomentum
-        renderItem={({ item }) => <SlidePage slide={item} />}
+        getItemLayout={(_, index) => ({
+          length: PAGE_WIDTH,
+          offset: PAGE_WIDTH * index,
+          index,
+        })}
+        renderItem={({ item }) => (
+          <SlidePage
+            slide={item}
+            centerContent={centerContent}
+            brandLabel={centerContent ? step.brandLabel : undefined}
+            height={pageHeight}
+          />
+        )}
       />
 
-      <View style={[styles.dotRow, { width: dotTrackWidth }]}>
-        {slides.map((_, index) => (
-          <View
-            key={index}
-            style={[styles.dot, { marginRight: index < slides.length - 1 ? DOT_GAP : 0 }]}
-          />
-        ))}
-        <Animated.View style={[styles.dotActive, indicatorStyle]} />
+      <View style={styles.dotsWrap}>
+        <OnboardingPageDotIndicator
+          count={slides.length}
+          activeIndex={activeSlideIndex}
+          activeColor={darkDots ? "#FFFFFF" : ONBOARDING_INK}
+          inactiveColor={
+            darkDots ? "rgba(255,255,255,0.35)" : "rgba(61,56,50,0.22)"
+          }
+        />
       </View>
     </View>
   );
 }
 
-function SlidePage({ slide }: { slide: OnboardingSlide }) {
+interface SlidePageProps {
+  slide: OnboardingSlide;
+  centerContent: boolean;
+  brandLabel?: string;
+  height: number;
+}
+
+function SlidePage({ slide, centerContent, brandLabel, height }: SlidePageProps) {
   const theme = useTheme();
   const pastel = OnboardingPastelPalette.forTone(slide.pastel ?? "default", theme.isDark);
   const textColor = pastel.text;
   const mutedColor = pastel.textMuted;
 
   return (
-    <View style={[styles.page, { width: PAGE_WIDTH, backgroundColor: pastel.bg }]}>
-      <View style={styles.upperSpacer} />
+    <View
+      style={[
+        styles.page,
+        centerContent && styles.pageCentered,
+        { width: PAGE_WIDTH, height: height > 0 ? height : undefined },
+      ]}
+    >
+      {!centerContent ? <View style={styles.upperSpacer} /> : null}
+
+      {brandLabel ? (
+        <ThemedText variant="title" style={[styles.brandInline, { color: textColor }]}>
+          {brandLabel}
+        </ThemedText>
+      ) : null}
 
       {slide.graphic ? (
         <View style={styles.graphicWrap}>
@@ -127,7 +200,7 @@ function SlidePage({ slide }: { slide: OnboardingSlide }) {
         ) : null}
       </View>
 
-      <View style={styles.dotSpacer} />
+      {!centerContent ? <View style={styles.dotSpacer} /> : null}
     </View>
   );
 }
@@ -137,11 +210,29 @@ const styles = StyleSheet.create({
     flex: 1,
     marginHorizontal: -20,
   },
-  page: {
+  brand: {
+    color: ONBOARDING_INK,
+    textAlign: "center",
+    marginTop: 8,
+    marginBottom: 4,
+    letterSpacing: 0.4,
+  },
+  brandInline: {
+    textAlign: "center",
+    marginBottom: 12,
+    letterSpacing: 0.4,
+  },
+  list: {
     flex: 1,
+  },
+  page: {
     alignItems: "center",
     paddingHorizontal: 32,
     paddingBottom: 12,
+  },
+  pageCentered: {
+    justifyContent: "center",
+    paddingBottom: 24,
   },
   upperSpacer: {
     height: 36,
@@ -177,27 +268,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 16,
   },
-  dotRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "center",
+  dotsWrap: {
     marginBottom: 8,
-    position: "relative",
-    height: DOT,
-  },
-  dot: {
-    width: DOT,
-    height: DOT,
-    borderRadius: DOT / 2,
-    backgroundColor: "rgba(255,255,255,0.35)",
-  },
-  dotActive: {
-    position: "absolute",
-    left: 0,
-    top: 0,
-    width: 22,
-    height: DOT,
-    borderRadius: DOT / 2,
-    backgroundColor: "#FFFFFF",
   },
 });

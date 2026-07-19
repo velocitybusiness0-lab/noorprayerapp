@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { StyleSheet, TextStyle, View } from "react-native";
 import { ONBOARDING_INK } from "@/features/onboarding/OnboardingPastelPalette";
 import { ThemedText } from "@/components/primitives/ThemedText";
@@ -14,6 +14,7 @@ interface OnboardingTypingRevealProps {
   titleVariant?: TextVariant;
   titleStyle?: TextStyle;
   bodyStyle?: TextStyle;
+  onComplete?: () => void;
 }
 
 /** Faith-style quote with a typing reveal and haptic feedback. */
@@ -25,8 +26,14 @@ export function OnboardingTypingReveal({
   titleVariant = "title",
   titleStyle,
   bodyStyle,
+  onComplete,
 }: OnboardingTypingRevealProps) {
-  const { titleText, bodyText } = useTypingReveal(title, body);
+  const { titleText, bodyText, isComplete } = useTypingReveal(title, body);
+
+  useEffect(() => {
+    if (isComplete) onComplete?.();
+  }, [isComplete, onComplete]);
+
   const showTitleCursor = titleText.length < title.length;
   const showBodyCursor =
     Boolean(body) &&

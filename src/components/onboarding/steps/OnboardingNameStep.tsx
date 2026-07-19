@@ -1,22 +1,58 @@
-import React from "react";
-import { StyleSheet, TextInput, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import {
+  Keyboard,
+  Platform,
+  StyleSheet,
+  TextInput,
+  View,
+} from "react-native";
 import { useTheme } from "@/core/theme";
 import { ThemedText } from "@/components/primitives/ThemedText";
+import { OnboardingNameKeyboardLayoutPolicy } from "@/features/onboarding/OnboardingNameKeyboardLayoutPolicy";
 import { OnboardingStep } from "@/features/onboarding/onboarding.types";
 
 interface OnboardingNameStepProps {
   step: OnboardingStep;
-  value: string;
-  onChange: (value: string) => void;
+  nameValue: string;
+  ageValue: string;
+  onNameChange: (value: string) => void;
+  onAgeChange: (value: string) => void;
 }
 
-/** Centered name input; continue appears while typing (handled by parent). */
-export function OnboardingNameStep({ step, value, onChange }: OnboardingNameStepProps) {
+/** Name + age inputs; top-aligns while keyboard is open so both fields stay visible. */
+export function OnboardingNameStep({
+  step,
+  nameValue,
+  ageValue,
+  onNameChange,
+  onAgeChange,
+}: OnboardingNameStepProps) {
   const theme = useTheme();
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const inputColors = {
+    color: theme.colors.textPrimary,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+  };
+  const compact = keyboardOpen;
+  const layout = OnboardingNameKeyboardLayoutPolicy;
+
+  useEffect(() => {
+    const showEvent =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const showSub = Keyboard.addListener(showEvent, () => setKeyboardOpen(true));
+    const hideSub = Keyboard.addListener(hideEvent, () => setKeyboardOpen(false));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   return (
-    <View style={styles.wrap}>
-      <View style={styles.center}>
+    <View style={[styles.root, layout.rootStyle(compact)]}>
+      <View style={[styles.center, { gap: layout.fieldGap(compact) }]}>
         <ThemedText variant="heading" style={styles.title}>
           {step.title}
         </ThemedText>
@@ -27,21 +63,39 @@ export function OnboardingNameStep({ step, value, onChange }: OnboardingNameStep
         ) : null}
 
         <TextInput
-          value={value}
-          onChangeText={onChange}
+          value={nameValue}
+          onChangeText={onNameChange}
           placeholder="Your name"
           placeholderTextColor={theme.colors.textTertiary}
           autoFocus
           autoCapitalize="words"
           autoCorrect={false}
+          onFocus={() => setKeyboardOpen(true)}
           style={[
             styles.input,
-            {
-              color: theme.colors.textPrimary,
-              borderColor: theme.colors.border,
-              backgroundColor: theme.colors.surface,
-            },
+            inputColors,
+            { marginTop: layout.inputMarginTop(compact) },
           ]}
+        />
+
+        <ThemedText
+          variant="bodyStrong"
+          style={[
+            styles.ageLabel,
+            { marginTop: layout.ageLabelMarginTop(compact) },
+          ]}
+        >
+          Age
+        </ThemedText>
+        <TextInput
+          value={ageValue}
+          onChangeText={onAgeChange}
+          placeholder="Your age"
+          placeholderTextColor={theme.colors.textTertiary}
+          keyboardType="number-pad"
+          maxLength={3}
+          onFocus={() => setKeyboardOpen(true)}
+          style={[styles.input, styles.ageInput, inputColors]}
         />
       </View>
     </View>
@@ -49,9 +103,8 @@ export function OnboardingNameStep({ step, value, onChange }: OnboardingNameStep
 }
 
 const styles = StyleSheet.create({
-  wrap: {
+  root: {
     flex: 1,
-    justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 24,
   },
@@ -59,7 +112,6 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 320,
     alignItems: "center",
-    gap: 12,
   },
   title: {
     textAlign: "center",
@@ -76,6 +128,12 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     fontSize: 18,
     textAlign: "center",
-    marginTop: 16,
+  },
+  ageLabel: {
+    alignSelf: "stretch",
+    textAlign: "center",
+  },
+  ageInput: {
+    marginTop: 0,
   },
 });

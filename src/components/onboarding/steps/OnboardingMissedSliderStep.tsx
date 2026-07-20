@@ -9,6 +9,7 @@ import Animated, {
 import { useTheme } from "@/core/theme";
 import { haptics } from "@/core/haptics/HapticsManager";
 import { ThemedText } from "@/components/primitives/ThemedText";
+import { ONBOARDING_INK } from "@/features/onboarding/OnboardingPastelPalette";
 import { OnboardingStep } from "@/features/onboarding/onboarding.types";
 
 interface OnboardingMissedSliderStepProps {
@@ -27,7 +28,7 @@ function sliderColorForRatio(ratio: number, accent: string): string {
   return "#DC2626";
 }
 
-/** Draggable bar for missed namaz per day — redder as value rises. */
+/** Draggable bar for missed salah per day — redder as value rises. */
 export function OnboardingMissedSliderStep({
   step,
   value,
@@ -121,7 +122,7 @@ export function OnboardingMissedSliderStep({
           {current}
         </ThemedText>
         <ThemedText variant="caption" color="textSecondary">
-          namaz missed per day
+          salah missed per day
         </ThemedText>
 
         <GestureDetector gesture={gesture}>
@@ -161,25 +162,33 @@ export function OnboardingMissedSliderStep({
 const styles = StyleSheet.create({
   wrap: {
     flex: 1,
+    width: "100%",
   },
   title: {
+    color: ONBOARDING_INK,
     textAlign: "center",
-    marginBottom: 32,
+    marginBottom: 48,
+    paddingHorizontal: 8,
+    fontSize: 26,
+    lineHeight: 34,
   },
   center: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
     paddingHorizontal: 12,
     width: "100%",
-    paddingTop: 12,
-    paddingBottom: 24,
+    // Fixed vertical bias so flex center does not reflow after track measure.
+    marginTop: -56,
   },
   value: {
     fontVariant: ["tabular-nums"],
   },
   trackWrap: {
     width: "100%",
+    maxWidth: 220,
+    alignSelf: "center",
     height: 48,
     justifyContent: "center",
     marginTop: 24,
@@ -206,6 +215,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     width: "100%",
+    maxWidth: 220,
+    alignSelf: "center",
     marginTop: 14,
     paddingHorizontal: 2,
   },

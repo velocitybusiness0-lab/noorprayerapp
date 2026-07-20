@@ -24,6 +24,9 @@ import { OnboardingStreakStep } from "./steps/OnboardingStreakStep";
 import { OnboardingCommitmentStep } from "./steps/OnboardingCommitmentStep";
 import { OnboardingBenefitsGraphStep } from "./steps/OnboardingBenefitsGraphStep";
 import { OnboardingPersonalizedPlanStep } from "./steps/OnboardingPersonalizedPlanStep";
+import { OnboardingSymptomsStep } from "./steps/OnboardingSymptomsStep";
+import { OnboardingPrePaywallTypingStep } from "./steps/OnboardingPrePaywallTypingStep";
+import { OnboardingRatingStep } from "./steps/OnboardingRatingStep";
 import { OnboardingNameAnswerKeys } from "@/features/onboarding/OnboardingNameAnswerKeys";
 
 interface OnboardingStepContentProps {
@@ -38,6 +41,7 @@ interface OnboardingStepContentProps {
   onComparisonAnimationComplete?: () => void;
   onTypingComplete?: () => void;
   onCommitmentLockIn?: () => void;
+  onPrePaywallTypingComplete?: () => void;
   onContinue?: () => void;
 }
 
@@ -54,6 +58,7 @@ export function OnboardingStepContent({
   onComparisonAnimationComplete,
   onTypingComplete,
   onCommitmentLockIn,
+  onPrePaywallTypingComplete,
   onContinue,
 }: OnboardingStepContentProps) {
   if (step.type === "welcome") {
@@ -97,6 +102,16 @@ export function OnboardingStepContent({
     return <OnboardingMissedGraphStep step={step} answers={answers} />;
   }
 
+  if (step.type === "symptoms") {
+    return (
+      <OnboardingSymptomsStep
+        step={step}
+        answers={answers}
+        onAnswer={(stepId, value) => onAnswer(stepId, value)}
+      />
+    );
+  }
+
   if (step.type === "feature-slideshow") {
     return <OnboardingFeatureSlideshowStep step={step} />;
   }
@@ -134,6 +149,7 @@ export function OnboardingStepContent({
   if (step.type === "slideshow") {
     return (
       <OnboardingSlideshowStep
+        key={step.id}
         ref={slideshowRef}
         step={step}
         activeSlideIndex={slideshowIndex}
@@ -155,6 +171,12 @@ export function OnboardingStepContent({
     return <OnboardingStreakStep step={step} />;
   }
 
+  if (step.type === "rating") {
+    return (
+      <OnboardingRatingStep step={step} onReady={onTypingComplete} />
+    );
+  }
+
   if (step.type === "commitment") {
     return (
       <OnboardingCommitmentStep
@@ -166,6 +188,16 @@ export function OnboardingStepContent({
 
   if (step.type === "benefits-graph") {
     return <OnboardingBenefitsGraphStep step={step} />;
+  }
+
+  if (step.type === "prepaywall-typing") {
+    return (
+      <OnboardingPrePaywallTypingStep
+        step={step}
+        answers={answers}
+        onComplete={() => onPrePaywallTypingComplete?.()}
+      />
+    );
   }
 
   if (step.type === "personalized-plan") {

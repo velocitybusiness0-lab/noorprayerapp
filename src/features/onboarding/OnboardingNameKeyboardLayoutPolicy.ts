@@ -2,25 +2,20 @@ import { ViewStyle } from "react-native";
 
 /** Vertical layout for the name step when the keyboard is open vs dismissed. */
 export class OnboardingNameKeyboardLayoutPolicy {
-  static readonly compactTopPadding = 8;
+  static readonly compactTopPadding = 4;
+  static readonly relaxedTopPadding = 8;
   static readonly compactFieldGap = 8;
   static readonly relaxedFieldGap = 12;
-  static readonly compactAgeLabelMarginTop = 12;
-  static readonly relaxedAgeLabelMarginTop = 28;
-  static readonly compactInputMarginTop = 8;
-  static readonly relaxedInputMarginTop = 16;
+  static readonly compactAgeLabelMarginTop = 10;
+  static readonly relaxedAgeLabelMarginTop = 20;
+  static readonly compactInputMarginTop = 6;
+  static readonly relaxedInputMarginTop = 12;
 
-  /** Top-align when compact so name + age stay above Continue + keyboard. */
+  /** Top-align so fields stay visible above Continue + keyboard. */
   static rootStyle(compact: boolean): ViewStyle {
-    if (compact) {
-      return {
-        justifyContent: "flex-start",
-        paddingTop: this.compactTopPadding,
-      };
-    }
     return {
-      justifyContent: "center",
-      paddingTop: 0,
+      justifyContent: "flex-start",
+      paddingTop: compact ? this.compactTopPadding : this.relaxedTopPadding,
     };
   }
 

@@ -38,7 +38,7 @@ const ink = { color: ONBOARDING_INK };
 
 const styles = StyleSheet.create({
   slot: {
-    minHeight: 132,
+    minHeight: 140,
     width: "100%",
     alignItems: "center",
     justifyContent: "center",
@@ -46,14 +46,14 @@ const styles = StyleSheet.create({
   quote: {
     alignItems: "center",
     gap: 10,
-    paddingHorizontal: 12,
-    maxWidth: 300,
+    paddingHorizontal: 4,
+    maxWidth: 380,
   },
   title: {
     ...ink,
     textAlign: "center",
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: 20,
+    lineHeight: 28,
   },
   source: {
     ...ink,

@@ -78,7 +78,13 @@ export const OnboardingSlideshowStep = forwardRef<
       activeSlideIndex,
       slides.length
     );
-  }, [activeSlideIndex, slides.length, step.id]);
+  }, [activeSlideIndex, slides.length]);
+
+  // Invalidate reported index when the slideshow step changes so the pager
+  // scroll effect cannot early-return while FlatList still shows the prior offset.
+  useEffect(() => {
+    reportedIndexRef.current = -1;
+  }, [step.id]);
 
   useEffect(() => {
     if (!layoutReadyRef.current) return;
@@ -92,9 +98,9 @@ export const OnboardingSlideshowStep = forwardRef<
       safeIndex,
       slides.length,
       pageWidth,
-      true
+      false
     );
-  }, [pageWidth, safeIndex, slides.length]);
+  }, [pageWidth, safeIndex, slides.length, step.id]);
 
   const emitIndex = useCallback(
     (index: number, fromUserSwipe: boolean) => {
@@ -188,6 +194,7 @@ export const OnboardingSlideshowStep = forwardRef<
       >
         {pageWidth > 0 ? (
           <FlatList
+            key={step.id}
             ref={listRef}
             data={slides}
             horizontal
@@ -208,7 +215,7 @@ export const OnboardingSlideshowStep = forwardRef<
             onMomentumScrollEnd={onMomentumScrollEnd}
             onScrollToIndexFailed={onScrollToIndexFailed}
             initialScrollIndex={safeIndex > 0 ? safeIndex : undefined}
-            extraData={safeIndex}
+            extraData={`${step.id}:${safeIndex}`}
             renderItem={({ item }) => (
               <SlidePage
                 slide={item}

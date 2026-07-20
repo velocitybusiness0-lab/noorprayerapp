@@ -11,6 +11,7 @@ export type OnboardingStepTransitionDirection = "forward" | "back";
 export class OnboardingStepTransitionPolicy {
   private static readonly fadeOnlyTypes = new Set<OnboardingStepType>([
     "welcome",
+    "prepaywall-typing",
     "personalized-plan",
   ]);
 

@@ -10,6 +10,7 @@ export type OnboardingStepType =
   | "comparison"
   | "slider"
   | "missed-graph"
+  | "symptoms"
   | "feature-slideshow"
   | "name"
   | "faith-slideshow"
@@ -18,7 +19,9 @@ export type OnboardingStepType =
   | "slideshow"
   | "hope-screen"
   | "streak"
+  | "rating"
   | "commitment"
+  | "prepaywall-typing"
   | "benefits-graph"
   | "personalized-plan";
 

@@ -8,7 +8,8 @@ export class OnboardingContinueInteractionGate {
     return (
       stepType === "comparison" ||
       stepType === "message" ||
-      stepType === "hope-screen"
+      stepType === "hope-screen" ||
+      stepType === "rating"
     );
   }
 }

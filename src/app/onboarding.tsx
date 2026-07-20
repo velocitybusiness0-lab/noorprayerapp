@@ -145,7 +145,8 @@ export default function OnboardingScreen() {
     step.type
   );
   const pinFooterInFlow =
-    OnboardingFooterVisibilityPolicy.shouldPinFooterInFlow(step.type);
+    OnboardingFooterVisibilityPolicy.shouldPinFooterInFlow(step.type) ||
+    step.id === "choose-goals";
 
   const continueDisabled = OnboardingContinueInteractionGate.needsReady(
     step.type
@@ -175,10 +176,13 @@ export default function OnboardingScreen() {
 
   const contentTransitionKey = step.id;
 
+  // Keep shell top padding stable across holding-back → slider → missed-graph
+  // (and the multi-choice after). Flipping centerContent mid-transition jumps
+  // paddingTop from 72→16 while the exiting page is still on screen.
   const centerContent =
     step.type === "personalized-plan" ||
-    step.type === "missed-graph" ||
-    step.type === "slider" ||
+    step.type === "streak" ||
+    step.type === "name" ||
     step.type === "benefits-graph" ||
     (step.type === "slideshow" && step.contentPlacement === "center");
 
@@ -196,8 +200,10 @@ export default function OnboardingScreen() {
         continueDisabled={continueDisabled}
         hideContinue={hideContinue}
         keyboardAvoid={step.type === "name"}
+        keyboardVerticalOffset={step.type === "name" ? 0 : undefined}
         pinFooterInFlow={pinFooterInFlow}
         centerContent={centerContent}
+        compactTopPadding={step.type === "symptoms"}
         pastel={shellPastel ?? "default"}
         onBack={flow.goBack}
         onContinue={handleContinue}
@@ -214,6 +220,7 @@ export default function OnboardingScreen() {
           onComparisonAnimationComplete={handleInteractionReady}
           onTypingComplete={handleInteractionReady}
           onCommitmentLockIn={advance}
+          onPrePaywallTypingComplete={advance}
           onContinue={handleContinue}
         />
       </OnboardingShell>

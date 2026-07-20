@@ -33,7 +33,7 @@ export const ONBOARDING_SETUP_STEPS: OnboardingStep[] = [
     body: "We will use this to personalize your experience.",
     continueLabel: "Continue",
     requiresSelection: true,
-    pastel: "white",
+    pastel: "default",
   },
   {
     id: "calculation",
@@ -49,18 +49,26 @@ export const ONBOARDING_SETUP_STEPS: OnboardingStep[] = [
     ],
     calculationQuotes: [
       {
-        title: "Every return begins with one sincere step",
-        source: "Miraj Reflection",
+        title: "Indeed, with hardship comes ease.",
+        source: "Qur'an 94:6",
       },
       {
-        title: "Allah opens doors when you decide to come back",
-        source: "Reminder",
+        title:
+          "The most beloved of deeds to Allah are the most consistent of them, even if they are few.",
+        source: "Sahih al-Bukhari 6464",
       },
       {
-        title: "Small acts done consistently can rebuild a life",
-        source: "Daily Discipline",
+        title: "Allah does not burden a soul beyond that it can bear.",
+        source: "Qur'an 2:286",
       },
     ],
+    pastel: "default",
+  },
+  {
+    id: "missed-stats",
+    type: "missed-graph",
+    continueLabel: "Continue",
+    pastel: "default",
   },
   {
     id: "bad-news",
@@ -105,14 +113,6 @@ export const ONBOARDING_SETUP_STEPS: OnboardingStep[] = [
     pastel: "hardRed",
   },
   {
-    id: "salah-benefits",
-    type: "benefits-graph",
-    title: "Prayer consistency",
-    footer: "Miraj pairs prayer alarms with goals so showing up becomes habit.",
-    continueLabel: "Continue",
-    pastel: "white",
-  },
-  {
     id: "miraj-welcome-slides",
     type: "slideshow",
     brandLabel: "Miraj",
@@ -141,14 +141,6 @@ export const ONBOARDING_SETUP_STEPS: OnboardingStep[] = [
     pastel: "white",
   },
   {
-    id: "green-hope",
-    type: "hope-screen",
-    title: "You can change",
-    body: "Allah never lets you down. Your next salah is still waiting for you, and every day is a fresh chance to show up.",
-    continueLabel: "Continue",
-    pastel: "green",
-  },
-  {
     id: "streak",
     type: "streak",
     title: "Stay motivated with a consistent daily routine",
@@ -157,12 +149,11 @@ export const ONBOARDING_SETUP_STEPS: OnboardingStep[] = [
     pastel: "white",
   },
   {
-    id: "commitment",
-    type: "commitment",
-    brandLabel: "Miraj",
-    title: "Commit",
-    body: "Sign to show up for salah.",
-    continueLabel: "Hold to Lock In",
+    id: "rating",
+    type: "rating",
+    title: "Give us a rating",
+    body: "Miraj was designed for Muslims building better salah habits.",
+    continueLabel: "Continue",
     pastel: "default",
   },
   {
@@ -182,6 +173,19 @@ export const ONBOARDING_SETUP_STEPS: OnboardingStep[] = [
       { id: "charity", label: "Give charity regularly" },
       { id: "fasting", label: "Fast Mondays & Thursdays" },
     ],
+  },
+  {
+    id: "commitment",
+    type: "commitment",
+    title: "Sign your commitment",
+    body: "Sign to show up for salah.",
+    continueLabel: "Hold to Lock In",
+    pastel: "default",
+  },
+  {
+    id: "prepaywall-typing",
+    type: "prepaywall-typing",
+    pastel: "default",
   },
   {
     id: "personalized-plan",

@@ -72,7 +72,6 @@ export function OnboardingNameStep({
             onChangeText={onNameChange}
             placeholder="Enter your name"
             placeholderTextColor="rgba(61,56,50,0.45)"
-            autoFocus
             autoCapitalize="words"
             autoCorrect={false}
             returnKeyType="next"

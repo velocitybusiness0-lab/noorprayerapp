@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
     alignItems: "center",
     paddingTop: 48,
-    paddingHorizontal: 24,
+    paddingHorizontal: 8,
     gap: 20,
   },
   fallback: {
@@ -163,9 +163,9 @@ const styles = StyleSheet.create({
   },
   progressBlock: {
     width: "100%",
-    maxWidth: 320,
+    maxWidth: 420,
     alignItems: "center",
-    gap: 8,
+    gap: 10,
   },
   percent: {
     color: ONBOARDING_INK,

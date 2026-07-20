@@ -10,6 +10,7 @@ export class OnboardingProgressPolicy {
   static shouldShowProgressBar(step: OnboardingStep | null, stepIndex: number): boolean {
     if (step?.type === "welcome") return false;
     if (step?.type === "calculation") return false;
+    if (step?.type === "prepaywall-typing") return false;
     if (this.calculationIndex < 0) return true;
     return stepIndex < this.calculationIndex;
   }
@@ -36,15 +37,19 @@ export class OnboardingProgressPolicy {
     return 1;
   }
 
-  /** Hides back on calculation, cinematic beats, and choose-goals. */
+  /** Hides back on calculation, cinematic beats, streak, rating, symptoms, and choose-goals. */
   static shouldShowBack(step: OnboardingStep | null, stepIndex: number): boolean {
     if (stepIndex <= 0 || !step) return false;
     if (step.id === "choose-goals") return false;
+    if (step.id === "streak") return false;
+    if (step.id === "symptoms") return false;
+    if (step.id === "rating") return false;
     if (step.type === "calculation") return false;
     if (step.type === "downtrend") return false;
     if (step.type === "slideshow") return false;
     if (step.type === "hope-screen") return false;
     if (step.type === "commitment") return false;
+    if (step.type === "prepaywall-typing") return false;
     if (step.type === "benefits-graph") return false;
     if (step.type === "personalized-plan") return false;
     return true;

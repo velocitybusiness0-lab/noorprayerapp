@@ -89,6 +89,13 @@ export function OnboardingMissedGraphStep({ step, answers }: OnboardingMissedGra
             />
           ))}
         </View>
+
+        <ThemedText
+          variant="bodyStrong"
+          style={[styles.duaLine, { color: OnboardingMissedGraphTheme.label }]}
+        >
+          {OnboardingMissedImpactCopy.missedDuaLine()}
+        </ThemedText>
       </View>
     </ScrollView>
   );
@@ -99,7 +106,9 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: "center",
     paddingHorizontal: 12,
-    paddingVertical: 24,
+    // Bias block upward so bars sit nearer vertical middle (footer sits below).
+    paddingTop: 4,
+    paddingBottom: 72,
   },
   centeredBlock: {
     width: "100%",
@@ -133,5 +142,12 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 300,
     alignSelf: "center",
+  },
+  duaLine: {
+    textAlign: "center",
+    marginTop: 32,
+    fontSize: 16,
+    lineHeight: 22,
+    maxWidth: 280,
   },
 });

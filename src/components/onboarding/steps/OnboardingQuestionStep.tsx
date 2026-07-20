@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { ONBOARDING_INK } from "@/features/onboarding/OnboardingPastelPalette";
 import { OnboardingOptionsPlacement } from "@/features/onboarding/OnboardingOptionsPlacement";
 import { ThemedText } from "@/components/primitives/ThemedText";
@@ -31,38 +31,62 @@ export function OnboardingQuestionStep({
   const multi = step.selectionMode === "multi";
   const selectedIds = readMultiSelected(answers, step.id);
   const selectedId = selectedIds[0];
+  const scrollable = multi || step.id === "choose-goals";
+
+  const title = (
+    <ThemedText variant="heading" style={styles.title}>
+      {step.title}
+    </ThemedText>
+  );
+
+  const options = (
+    <View
+      style={[
+        styles.options,
+        !scrollable && styles.optionsFill,
+        !scrollable && OnboardingOptionsPlacement.resolve(step.optionsPlacement),
+      ]}
+    >
+      {step.options ? (
+        <OnboardingOptionList
+          multi={multi}
+          options={step.options}
+          spacing={step.optionSpacing}
+          selectedId={selectedId}
+          selectedIds={selectedIds}
+          onSelect={(id) => {
+            if (multi) {
+              const next = selectedIds.includes(id)
+                ? selectedIds.filter((item) => item !== id)
+                : [...selectedIds, id];
+              onAnswer(step.id, next);
+              return;
+            }
+            onAnswer(step.id, id);
+          }}
+        />
+      ) : null}
+    </View>
+  );
+
+  if (scrollable) {
+    return (
+      <ScrollView
+        style={styles.wrap}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {title}
+        {options}
+      </ScrollView>
+    );
+  }
 
   return (
     <View style={styles.wrap}>
-      <ThemedText variant="heading" style={styles.title}>
-        {step.title}
-      </ThemedText>
-      <View
-        style={[
-          styles.options,
-          OnboardingOptionsPlacement.resolve(step.optionsPlacement),
-        ]}
-      >
-        {step.options ? (
-          <OnboardingOptionList
-            multi={multi}
-            options={step.options}
-            spacing={step.optionSpacing}
-            selectedId={selectedId}
-            selectedIds={selectedIds}
-            onSelect={(id) => {
-              if (multi) {
-                const next = selectedIds.includes(id)
-                  ? selectedIds.filter((item) => item !== id)
-                  : [...selectedIds, id];
-                onAnswer(step.id, next);
-                return;
-              }
-              onAnswer(step.id, id);
-            }}
-          />
-        ) : null}
-      </View>
+      {title}
+      {options}
     </View>
   );
 }
@@ -72,16 +96,22 @@ const styles = StyleSheet.create({
     flex: 1,
     width: "100%",
   },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 16,
+  },
   title: {
     color: ONBOARDING_INK,
     textAlign: "center",
     marginBottom: 48,
     paddingHorizontal: 8,
-    fontSize: 22,
-    lineHeight: 28,
+    fontSize: 26,
+    lineHeight: 34,
   },
   options: {
-    flex: 1,
     paddingBottom: 16,
+  },
+  optionsFill: {
+    flex: 1,
   },
 });

@@ -1,8 +1,9 @@
-import React, { useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { StyleSheet, View } from "react-native";
-import { Pressable } from "react-native-gesture-handler";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   Easing,
+  runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -32,27 +33,35 @@ export function OnboardingHoldToLockInButton({
   onComplete,
 }: OnboardingHoldToLockInButtonProps) {
   const progress = useSharedValue(0);
+  const isHolding = useSharedValue(false);
   const holdStartedAtRef = useRef<number | null>(null);
   const completedRef = useRef(false);
+  const lastHapticMilestoneRef = useRef(-1);
   const rafRef = useRef<number | null>(null);
+  const enabledRef = useRef(enabled);
+  const onCompleteRef = useRef(onComplete);
+  enabledRef.current = enabled;
+  onCompleteRef.current = onComplete;
 
-  const clearHold = () => {
+  const clearHold = useCallback(() => {
     if (rafRef.current != null) {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
     }
     holdStartedAtRef.current = null;
+    lastHapticMilestoneRef.current = -1;
+    isHolding.value = false;
     if (!completedRef.current) {
       progress.value = withTiming(0, {
         duration: 180,
         easing: Easing.out(Easing.cubic),
       });
     }
-  };
+  }, [isHolding, progress]);
 
-  useEffect(() => () => clearHold(), []);
+  useEffect(() => () => clearHold(), [clearHold]);
 
-  const tick = () => {
+  const tick = useCallback(() => {
     const startedAt = holdStartedAtRef.current;
     if (startedAt == null || completedRef.current) return;
 
@@ -60,56 +69,95 @@ export function OnboardingHoldToLockInButton({
     const next = OnboardingCommitmentHoldPolicy.progressForElapsed(elapsed);
     progress.value = next;
 
+    const milestone = OnboardingCommitmentHoldPolicy.hapticMilestoneIndex(next);
+    if (milestone > lastHapticMilestoneRef.current && milestone > 0 && next < 1) {
+      lastHapticMilestoneRef.current = milestone;
+      haptics.impact(OnboardingCommitmentHoldPolicy.impactStyleForProgress(next));
+    }
+
     if (OnboardingCommitmentHoldPolicy.isComplete(elapsed)) {
       completedRef.current = true;
       progress.value = 1;
+      isHolding.value = false;
+      haptics.impact(ImpactFeedbackStyle.Heavy);
       haptics.success();
-      onComplete();
+      onCompleteRef.current();
       return;
     }
 
     rafRef.current = requestAnimationFrame(tick);
-  };
+  }, [isHolding, progress]);
 
-  const beginHold = () => {
-    if (!enabled || completedRef.current) return;
-    if (!OnboardingCommitmentHoldPolicy.canBeginHold(enabled)) return;
+  const beginHold = useCallback(() => {
+    if (!enabledRef.current || completedRef.current) return;
+    if (!OnboardingCommitmentHoldPolicy.canBeginHold(enabledRef.current)) return;
+    if (holdStartedAtRef.current != null) return;
 
     holdStartedAtRef.current = Date.now();
+    lastHapticMilestoneRef.current = -1;
     progress.value = 0;
+    isHolding.value = true;
     haptics.impact(ImpactFeedbackStyle.Medium);
     rafRef.current = requestAnimationFrame(tick);
-  };
+  }, [isHolding, progress, tick]);
+
+  const endHold = useCallback(() => {
+    if (completedRef.current) return;
+    clearHold();
+  }, [clearHold]);
+
+  const beginHoldRef = useRef(beginHold);
+  const endHoldRef = useRef(endHold);
+  beginHoldRef.current = beginHold;
+  endHoldRef.current = endHold;
+
+  const invokeBeginHold = useCallback(() => beginHoldRef.current(), []);
+  const invokeEndHold = useCallback(() => endHoldRef.current(), []);
+
+  const holdGesture = useMemo(
+    () =>
+      Gesture.Pan()
+        .enabled(enabled)
+        .minDistance(0)
+        .onBegin(() => {
+          runOnJS(invokeBeginHold)();
+        })
+        .onFinalize(() => {
+          runOnJS(invokeEndHold)();
+        }),
+    [enabled, invokeBeginHold, invokeEndHold]
+  );
 
   const fillStyle = useAnimatedStyle(() => ({
     width: `${progress.value * 100}%`,
   }));
 
+  const buttonStyle = useAnimatedStyle(() => ({
+    opacity: isHolding.value ? 0.96 : 1,
+  }));
+
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ disabled: !enabled }}
-      disabled={!enabled || completedRef.current}
-      onPressIn={beginHold}
-      onPressOut={clearHold}
-      style={({ pressed }) => [
-        styles.button,
-        {
-          backgroundColor: trackColor,
-          opacity: !enabled ? 0.45 : pressed ? 0.96 : 1,
-        },
-      ]}
-    >
+    <GestureDetector gesture={holdGesture}>
       <Animated.View
-        pointerEvents="none"
-        style={[styles.fill, { backgroundColor: fillColor }, fillStyle]}
-      />
-      <View pointerEvents="none" style={styles.labelWrap}>
-        <ThemedText variant="bodyStrong" style={{ color: textColor }}>
-          {label}
-        </ThemedText>
-      </View>
-    </Pressable>
+        accessibilityRole="button"
+        accessibilityState={{ disabled: !enabled }}
+        style={[
+          styles.button,
+          { backgroundColor: trackColor, opacity: !enabled ? 0.45 : 1 },
+          enabled ? buttonStyle : null,
+        ]}
+      >
+        <Animated.View
+          pointerEvents="none"
+          style={[styles.fill, { backgroundColor: fillColor }, fillStyle]}
+        />
+        <View pointerEvents="none" style={styles.labelWrap}>
+          <ThemedText variant="bodyStrong" style={{ color: textColor }}>
+            {label}
+          </ThemedText>
+        </View>
+      </Animated.View>
+    </GestureDetector>
   );
 }
 

@@ -52,7 +52,7 @@ export function OnboardingTypingReveal({
   useEffect(() => {
     if (bodyReveal !== "fade" || !showBodyFade) return;
     bodyOpacity.value = withDelay(
-      80,
+      420,
       withTiming(1, { duration: 520, easing: Easing.out(Easing.cubic) })
     );
   }, [bodyOpacity, bodyReveal, showBodyFade]);

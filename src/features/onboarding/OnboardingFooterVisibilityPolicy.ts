@@ -6,11 +6,20 @@ import { OnboardingStepType } from "./onboarding.types";
  */
 export class OnboardingFooterVisibilityPolicy {
   static shouldHideContinue(stepType: OnboardingStepType): boolean {
-    return stepType === "calculation" || stepType === "commitment";
+    return (
+      stepType === "calculation" ||
+      stepType === "commitment" ||
+      stepType === "prepaywall-typing"
+    );
   }
 
   /** In-flow footer avoids absolute overlay being covered by long scroll pages. */
   static shouldPinFooterInFlow(stepType: OnboardingStepType): boolean {
-    return stepType === "personalized-plan" || stepType === "name";
+    return (
+      stepType === "personalized-plan" ||
+      stepType === "name" ||
+      stepType === "symptoms" ||
+      stepType === "rating"
+    );
   }
 }

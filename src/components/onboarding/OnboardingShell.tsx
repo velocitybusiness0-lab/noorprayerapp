@@ -42,10 +42,13 @@ interface OnboardingShellProps {
   continueDisabled?: boolean;
   hideContinue?: boolean;
   keyboardAvoid?: boolean;
+  keyboardVerticalOffset?: number;
   /** Keep Continue in document flow (not absolute) so scroll pages cannot cover it. */
   pinFooterInFlow?: boolean;
   /** Vertically center step body; uses a tighter top inset. */
   centerContent?: boolean;
+  /** Reduced top inset for long scroll pages (e.g. symptoms). */
+  compactTopPadding?: boolean;
   pastel?: OnboardingPastelTone;
   onBack: () => void;
   onContinue: () => void;
@@ -67,8 +70,10 @@ export function OnboardingShell({
   continueDisabled,
   hideContinue = false,
   keyboardAvoid = false,
+  keyboardVerticalOffset,
   pinFooterInFlow = false,
   centerContent = false,
+  compactTopPadding = false,
   pastel = "default",
   onBack,
   onContinue,
@@ -88,9 +93,11 @@ export function OnboardingShell({
     !hideContinue && (keyboardAvoid || pinFooterInFlow);
   const footerBlock =
     hideContinue || footerInFlow ? 0 : FOOTER_CONTENT_HEIGHT + footerPad;
-  const contentTopPadding = centerContent
-    ? OnboardingContentLayout.centeredContentTopPadding
-    : OnboardingContentLayout.contentTopPadding;
+  const contentTopPadding = compactTopPadding
+    ? OnboardingContentLayout.compactContentTopPadding
+    : centerContent
+      ? OnboardingContentLayout.centeredContentTopPadding
+      : OnboardingContentLayout.contentTopPadding;
   const [contentBusy, setContentBusy] = useState(false);
   const backgroundColor = useSharedValue(pastelColors.bg);
   const previousPastelRef = useRef(pastel);
@@ -207,17 +214,15 @@ export function OnboardingShell({
     <Animated.View style={[styles.fill, rootStyle]}>
       <Animated.View style={safeTopStyle} />
       <OnboardingSystemChrome pastel={pastel} />
-      {keyboardAvoid ? (
-        <KeyboardAvoidingView
-          style={styles.fill}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          keyboardVerticalOffset={insets.top + 8}
-        >
-          {body}
-        </KeyboardAvoidingView>
-      ) : (
-        body
-      )}
+      {/* Always mount KAV so toggling name↔other steps does not remount transitions. */}
+      <KeyboardAvoidingView
+        style={styles.fill}
+        enabled={keyboardAvoid}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={keyboardVerticalOffset ?? 0}
+      >
+        {body}
+      </KeyboardAvoidingView>
     </Animated.View>
   );
 }

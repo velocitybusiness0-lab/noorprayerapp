@@ -127,7 +127,8 @@ const styles = StyleSheet.create({
   center: {
     flex: 1,
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "flex-start",
+    paddingTop: 12,
     paddingHorizontal: 8,
     gap: 18,
   },

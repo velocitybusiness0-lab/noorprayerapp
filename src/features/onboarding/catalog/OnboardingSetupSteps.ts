@@ -119,19 +119,19 @@ export const ONBOARDING_SETUP_STEPS: OnboardingStep[] = [
     contentPlacement: "center",
     slides: [
       {
-        icon: "moon-outline",
+        graphic: "welcomeMiraj",
         title: "Welcome to Miraj",
         body: "Your salah companion, built to help you pray with more presence.",
         pastel: "white",
       },
       {
-        icon: "alarm-outline",
+        graphic: "welcomeAlarms",
         title: "Alarms that bring you back",
         body: "Prayer alarms and wake receipts help you show up for salah, even when mornings feel hard.",
         pastel: "white",
       },
       {
-        icon: "book-outline",
+        graphic: "welcomeConsistency",
         title: "Stay consistent every day",
         body: "Build streaks, explore duas, and get gentle reminders that keep faith close.",
         pastel: "white",
@@ -176,6 +176,13 @@ export const ONBOARDING_SETUP_STEPS: OnboardingStep[] = [
     title: "Commit",
     body: "Sign to show up for salah.",
     continueLabel: "Hold to Lock In",
+    pastel: "default",
+  },
+  {
+    id: "personalized-plan",
+    type: "personalized-plan",
+    title: "Your personalized plan is ready",
+    continueLabel: "Start my plan",
     pastel: "default",
   },
 ];

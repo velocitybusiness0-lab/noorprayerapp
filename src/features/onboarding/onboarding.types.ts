@@ -19,7 +19,8 @@ export type OnboardingStepType =
   | "hope-screen"
   | "streak"
   | "commitment"
-  | "benefits-graph";
+  | "benefits-graph"
+  | "personalized-plan";
 
 export interface OnboardingOption {
   id: string;
@@ -31,7 +32,13 @@ export interface OnboardingComparisonRow {
   negative: string;
 }
 
-export type OnboardingSlideGraphicType = "domino" | "hourglass" | "summit";
+export type OnboardingSlideGraphicType =
+  | "domino"
+  | "hourglass"
+  | "summit"
+  | "welcomeMiraj"
+  | "welcomeAlarms"
+  | "welcomeConsistency";
 
 export interface OnboardingSlide {
   title?: string;

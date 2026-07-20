@@ -45,6 +45,7 @@ export class OnboardingProgressPolicy {
     if (step.type === "hope-screen") return false;
     if (step.type === "commitment") return false;
     if (step.type === "benefits-graph") return false;
+    if (step.type === "personalized-plan") return false;
     return true;
   }
 }

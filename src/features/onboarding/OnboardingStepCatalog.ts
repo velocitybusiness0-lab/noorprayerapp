@@ -16,4 +16,8 @@ export class OnboardingStepCatalog {
   static stepAt(index: number): OnboardingStep | null {
     return this.steps[index] ?? null;
   }
+
+  static indexOfStepId(stepId: string): number {
+    return this.steps.findIndex((step) => step.id === stepId);
+  }
 }

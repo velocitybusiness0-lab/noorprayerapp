@@ -1,10 +1,15 @@
-import React, { ReactNode } from "react";
+import React, { ReactNode, useEffect, useRef, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
   View,
 } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/core/theme";
 import { OnboardingContentLayout } from "@/features/onboarding/OnboardingContentLayout";
@@ -13,12 +18,22 @@ import {
   ONBOARDING_INK,
   OnboardingPastelPalette,
 } from "@/features/onboarding/OnboardingPastelPalette";
+import { OnboardingShellBackgroundTiming } from "@/features/onboarding/OnboardingShellBackgroundTiming";
+import { OnboardingStepFadeTiming } from "@/features/onboarding/OnboardingStepFadeTiming";
+import {
+  OnboardingStepTransitionDirection,
+  OnboardingStepTransitionMode,
+} from "@/features/onboarding/OnboardingStepTransitionPolicy";
 import { OnboardingPastelTone } from "@/features/onboarding/onboarding.types";
 import { OnboardingProgressHeader } from "./OnboardingProgressHeader";
 import { OnboardingContinueButton } from "./OnboardingContinueButton";
+import { OnboardingStepFadeTransition } from "./OnboardingStepFadeTransition";
 import { OnboardingSystemChrome } from "./OnboardingSystemChrome";
 
 interface OnboardingShellProps {
+  stepKey: string;
+  transitionMode?: OnboardingStepTransitionMode;
+  transitionDirection?: OnboardingStepTransitionDirection;
   progress: number;
   progressOpacity?: number;
   showProgressBar?: boolean;
@@ -27,6 +42,8 @@ interface OnboardingShellProps {
   continueDisabled?: boolean;
   hideContinue?: boolean;
   keyboardAvoid?: boolean;
+  /** Keep Continue in document flow (not absolute) so scroll pages cannot cover it. */
+  pinFooterInFlow?: boolean;
   /** Vertically center step body; uses a tighter top inset. */
   centerContent?: boolean;
   pastel?: OnboardingPastelTone;
@@ -39,6 +56,9 @@ const FOOTER_CONTENT_HEIGHT = 54 + 12;
 
 /** Shared onboarding frame with matched safe-area colors. */
 export function OnboardingShell({
+  stepKey,
+  transitionMode = "fade",
+  transitionDirection = "forward",
   progress,
   progressOpacity = 1,
   showProgressBar = true,
@@ -47,6 +67,7 @@ export function OnboardingShell({
   continueDisabled,
   hideContinue = false,
   keyboardAvoid = false,
+  pinFooterInFlow = false,
   centerContent = false,
   pastel = "default",
   onBack,
@@ -63,12 +84,56 @@ export function OnboardingShell({
   );
   const trackColor = "rgba(61,56,50,0.12)";
   const footerPad = insets.bottom + theme.spacing.lg;
-  const footerInFlow = keyboardAvoid && !hideContinue;
+  const footerInFlow =
+    !hideContinue && (keyboardAvoid || pinFooterInFlow);
   const footerBlock =
     hideContinue || footerInFlow ? 0 : FOOTER_CONTENT_HEIGHT + footerPad;
   const contentTopPadding = centerContent
     ? OnboardingContentLayout.centeredContentTopPadding
     : OnboardingContentLayout.contentTopPadding;
+  const [contentBusy, setContentBusy] = useState(false);
+  const backgroundColor = useSharedValue(pastelColors.bg);
+  const previousPastelRef = useRef(pastel);
+
+  useEffect(() => {
+    const previousPastel = previousPastelRef.current;
+    previousPastelRef.current = pastel;
+    const durationMs = OnboardingShellBackgroundTiming.durationMs(
+      pastel,
+      previousPastel
+    );
+    if (durationMs <= 0) {
+      backgroundColor.value = pastelColors.bg;
+      return;
+    }
+    backgroundColor.value = withTiming(pastelColors.bg, {
+      duration: durationMs,
+      easing: OnboardingStepFadeTiming.easing,
+    });
+  }, [backgroundColor, pastel, pastelColors.bg]);
+
+  const rootStyle = useAnimatedStyle(() => ({
+    backgroundColor: backgroundColor.value,
+  }));
+
+  const safeTopStyle = useAnimatedStyle(() => ({
+    height: insets.top,
+    backgroundColor: backgroundColor.value,
+  }));
+
+  const footerBgStyle = useAnimatedStyle(() => ({
+    backgroundColor: backgroundColor.value,
+  }));
+
+  const gatedBack = () => {
+    if (contentBusy) return;
+    onBack();
+  };
+
+  const gatedContinue = () => {
+    if (contentBusy) return;
+    onContinue();
+  };
 
   const body = (
     <View style={styles.fill}>
@@ -77,7 +142,7 @@ export function OnboardingShell({
           progress={progress}
           opacity={progressOpacity}
           showBack={showBack}
-          onBack={onBack}
+          onBack={gatedBack}
           foregroundColor={ONBOARDING_INK}
           trackColor={trackColor}
         />
@@ -87,7 +152,7 @@ export function OnboardingShell({
           opacity={1}
           hideTrack
           showBack
-          onBack={onBack}
+          onBack={gatedBack}
           foregroundColor={ONBOARDING_INK}
           trackColor={trackColor}
         />
@@ -105,35 +170,42 @@ export function OnboardingShell({
         ]}
         pointerEvents="box-none"
       >
-        {children}
+        <OnboardingStepFadeTransition
+          stepKey={stepKey}
+          mode={transitionMode}
+          direction={transitionDirection}
+          onTransitionChange={setContentBusy}
+        >
+          {children}
+        </OnboardingStepFadeTransition>
       </View>
 
       {!hideContinue ? (
-        <View
+        <Animated.View
           pointerEvents="box-none"
           style={[
             footerInFlow ? styles.footerInFlow : styles.footer,
             {
               paddingBottom: footerPad,
-              backgroundColor: pastelColors.bg,
             },
+            footerBgStyle,
           ]}
         >
           <OnboardingContinueButton
             label={continueLabel}
-            disabled={continueDisabled}
+            disabled={continueDisabled || contentBusy}
             backgroundColor={continueColors.backgroundColor}
             textColor={continueColors.textColor}
-            onPress={onContinue}
+            onPress={gatedContinue}
           />
-        </View>
+        </Animated.View>
       ) : null}
     </View>
   );
 
   return (
-    <View style={[styles.fill, { backgroundColor: pastelColors.bg }]}>
-      <View style={{ height: insets.top, backgroundColor: pastelColors.bg }} />
+    <Animated.View style={[styles.fill, rootStyle]}>
+      <Animated.View style={safeTopStyle} />
       <OnboardingSystemChrome pastel={pastel} />
       {keyboardAvoid ? (
         <KeyboardAvoidingView
@@ -146,7 +218,7 @@ export function OnboardingShell({
       ) : (
         body
       )}
-    </View>
+    </Animated.View>
   );
 }
 

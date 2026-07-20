@@ -30,6 +30,7 @@ export const StorageKeys = {
   duaLibrary: "duas.library",
   motivationPrefs: "motivation.prefs",
   motivationReminderIds: "notifications.motivationReminderIds",
+  purposeEbookCompletion: "purposeEbook.completedChapterIds",
 } as const;
 
 export type StorageKey = (typeof StorageKeys)[keyof typeof StorageKeys];

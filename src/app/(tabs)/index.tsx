@@ -15,6 +15,7 @@ import { NextPrayerArcCard } from "@/components/home/NextPrayerArcCard";
 import { PrayerList } from "@/components/prayer/PrayerList";
 import { DailyGoalsSection } from "@/components/today/DailyGoalsSection";
 import { HomeMotivationCard } from "@/components/home/HomeMotivationCard";
+import { HomePurposeEbookCard } from "@/components/home/HomePurposeEbookCard";
 import { HomeMyDuasCard } from "@/components/duas/HomeMyDuasCard";
 import { NamazCompletionCelebration } from "@/components/celebration/NamazCompletionCelebration";
 import { SalahModePickerModal } from "@/components/modes/SalahModePickerModal";
@@ -132,6 +133,7 @@ export default function TodayScreen() {
 
           <HomeMyDuasCard />
           <HomeMotivationCard />
+          <HomePurposeEbookCard />
 
           <NamazCompletionCelebration visible={celebrationVisible} onFinished={dismissCelebration} />
         </>

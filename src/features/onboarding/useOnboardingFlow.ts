@@ -13,6 +13,7 @@ interface OnboardingFlowState {
   setAnswer: (stepId: string, value: string | string[] | number) => void;
   goNext: () => boolean;
   goBack: () => void;
+  goToStepId: (stepId: string) => boolean;
   complete: () => void;
 }
 
@@ -56,6 +57,13 @@ export function useOnboardingFlow(): OnboardingFlowState {
     setStepIndex((index) => index - 1);
   }, [stepIndex]);
 
+  const goToStepId = useCallback((stepId: string) => {
+    const index = OnboardingStepCatalog.indexOfStepId(stepId);
+    if (index < 0) return false;
+    setStepIndex(index);
+    return true;
+  }, []);
+
   const complete = useCallback(() => {
     onboardingCompletionStore.markComplete(answers);
   }, [answers]);
@@ -69,6 +77,7 @@ export function useOnboardingFlow(): OnboardingFlowState {
     setAnswer,
     goNext,
     goBack,
+    goToStepId,
     complete,
   };
 }

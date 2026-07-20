@@ -14,8 +14,8 @@ export class OnboardingOptionsPlacement {
         return { justifyContent: "center" };
       case "start":
       default:
-        // Natural mid/upper stack under the title — avoids footer crush.
-        return { justifyContent: "flex-start", paddingTop: 28 };
+        // Slightly lower under the title — keeps Continue / keyboard clear.
+        return { justifyContent: "flex-start", paddingTop: 44 };
     }
   }
 }

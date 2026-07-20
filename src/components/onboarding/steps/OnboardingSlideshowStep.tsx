@@ -1,16 +1,12 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Dimensions,
   FlatList,
-  LayoutChangeEvent,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   StyleSheet,
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import Animated, {
-  runOnJS,
-  useAnimatedScrollHandler,
-} from "react-native-reanimated";
 import { ThemedText } from "@/components/primitives/ThemedText";
 import { OnboardingPageDotIndicator } from "@/components/onboarding/OnboardingPageDotIndicator";
 import {
@@ -18,6 +14,7 @@ import {
   OnboardingPastelPalette,
 } from "@/features/onboarding/OnboardingPastelPalette";
 import { OnboardingSlideshowController } from "@/features/onboarding/OnboardingSlideshowController";
+import { OnboardingSlideshowPagerScroller } from "@/features/onboarding/OnboardingSlideshowPagerScroller";
 import { useTheme } from "@/core/theme";
 import { OnboardingStep, OnboardingSlide } from "@/features/onboarding/onboarding.types";
 import { OnboardingSlideGraphic } from "./OnboardingSlideGraphic";
@@ -28,14 +25,9 @@ interface OnboardingSlideshowStepProps {
   onActiveSlideChange?: (index: number) => void;
 }
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const PAGE_WIDTH = SCREEN_WIDTH;
-
-const AnimatedFlatList = Animated.createAnimatedComponent(FlatList<OnboardingSlide>);
-
 /**
- * Full-bleed onboarding slideshow (urgency narrative or Miraj welcome).
- * Pages are transparent so shell pastel owns the background.
+ * Horizontal swipe pager for urgency / Miraj welcome slides.
+ * Progress / Continue chrome stay in the shell; only slide pages move.
  */
 export function OnboardingSlideshowStep({
   step,
@@ -43,44 +35,96 @@ export function OnboardingSlideshowStep({
   onActiveSlideChange,
 }: OnboardingSlideshowStepProps) {
   const slides = step.slides ?? [];
-  const listRef = useRef<FlatList<OnboardingSlide>>(null);
-  const reportedIndexRef = useRef(activeSlideIndex);
-  const [pageHeight, setPageHeight] = useState(0);
   const centerContent = step.contentPlacement === "center";
+  const listRef = useRef<FlatList<OnboardingSlide>>(null);
+  const reportedIndexRef = useRef(
+    OnboardingSlideshowController.clampIndex(activeSlideIndex, slides.length)
+  );
+  const layoutReadyRef = useRef(false);
+  const [pageWidth, setPageWidth] = useState(0);
+  const [pageHeight, setPageHeight] = useState(0);
+  const safeIndex = OnboardingSlideshowController.clampIndex(
+    activeSlideIndex,
+    slides.length
+  );
   const activePastel = OnboardingSlideshowController.pastelAt(
     slides,
-    activeSlideIndex,
+    safeIndex,
     step.pastel ?? "hardRed"
   );
   const darkDots = OnboardingPastelPalette.isDarkTone(activePastel);
 
   useEffect(() => {
-    if (reportedIndexRef.current === activeSlideIndex) return;
-    reportedIndexRef.current = activeSlideIndex;
-    listRef.current?.scrollToOffset({
-      offset: activeSlideIndex * PAGE_WIDTH,
-      animated: true,
-    });
-  }, [activeSlideIndex]);
+    reportedIndexRef.current = OnboardingSlideshowController.clampIndex(
+      activeSlideIndex,
+      slides.length
+    );
+  }, [step.id, slides.length]);
 
-  const emitIndex = (index: number) => {
-    const safeIndex = OnboardingSlideshowController.clampIndex(index, slides.length);
-    if (safeIndex === reportedIndexRef.current) return;
+  useEffect(() => {
+    if (!layoutReadyRef.current) return;
+    if (!OnboardingSlideshowPagerScroller.canScroll(pageWidth, slides.length)) {
+      return;
+    }
+    if (reportedIndexRef.current === safeIndex) return;
     reportedIndexRef.current = safeIndex;
-    onActiveSlideChange?.(safeIndex);
-  };
+    OnboardingSlideshowPagerScroller.scrollToIndex(
+      listRef.current,
+      safeIndex,
+      slides.length,
+      pageWidth,
+      true
+    );
+  }, [pageWidth, safeIndex, slides.length]);
 
-  const scrollHandler = useAnimatedScrollHandler({
-    onScroll: (event) => {
-      const index = Math.round(event.contentOffset.x / PAGE_WIDTH);
-      runOnJS(emitIndex)(index);
+  const emitIndex = useCallback(
+    (index: number) => {
+      const next = OnboardingSlideshowController.clampIndex(index, slides.length);
+      if (next === reportedIndexRef.current) return;
+      reportedIndexRef.current = next;
+      onActiveSlideChange?.(next);
     },
-  });
+    [onActiveSlideChange, slides.length]
+  );
 
-  const onListLayout = (event: LayoutChangeEvent) => {
-    const next = Math.round(event.nativeEvent.layout.height);
-    if (next > 0 && next !== pageHeight) setPageHeight(next);
-  };
+  const syncIndexFromOffset = useCallback(
+    (offsetX: number) => {
+      if (pageWidth <= 0) return;
+      emitIndex(
+        OnboardingSlideshowController.indexFromOffset(offsetX, pageWidth)
+      );
+    },
+    [emitIndex, pageWidth]
+  );
+
+  const onScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      syncIndexFromOffset(event.nativeEvent.contentOffset.x);
+    },
+    [syncIndexFromOffset]
+  );
+
+  const onMomentumScrollEnd = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      syncIndexFromOffset(event.nativeEvent.contentOffset.x);
+    },
+    [syncIndexFromOffset]
+  );
+
+  const onScrollToIndexFailed = useCallback(
+    (info: { index: number; averageItemLength: number }) => {
+      OnboardingSlideshowPagerScroller.retryFailedIndex(
+        listRef.current,
+        info.index,
+        slides.length,
+        pageWidth,
+        info.averageItemLength
+      );
+    },
+    [pageWidth, slides.length]
+  );
+
+  if (slides.length === 0) return null;
 
   return (
     <View style={styles.wrap}>
@@ -90,39 +134,56 @@ export function OnboardingSlideshowStep({
         </ThemedText>
       ) : null}
 
-      <AnimatedFlatList
-        ref={listRef}
+      <View
         style={styles.list}
-        data={slides}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        keyExtractor={(_, i) => String(i)}
-        onScroll={scrollHandler}
-        onLayout={onListLayout}
-        scrollEventThrottle={16}
-        decelerationRate="fast"
-        snapToInterval={PAGE_WIDTH}
-        disableIntervalMomentum
-        getItemLayout={(_, index) => ({
-          length: PAGE_WIDTH,
-          offset: PAGE_WIDTH * index,
-          index,
-        })}
-        renderItem={({ item }) => (
-          <SlidePage
-            slide={item}
-            centerContent={centerContent}
-            brandLabel={centerContent ? step.brandLabel : undefined}
-            height={pageHeight}
+        onLayout={(event) => {
+          const { width, height } = event.nativeEvent.layout;
+          if (width > 0 && width !== pageWidth) setPageWidth(width);
+          if (height > 0 && height !== pageHeight) setPageHeight(height);
+          if (width > 0) layoutReadyRef.current = true;
+        }}
+      >
+        {pageWidth > 0 ? (
+          <FlatList
+            ref={listRef}
+            data={slides}
+            horizontal
+            pagingEnabled
+            bounces={false}
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(_, index) => `${step.id}-${index}`}
+            style={{ width: pageWidth }}
+            getItemLayout={(_, index) => ({
+              length: pageWidth,
+              offset: OnboardingSlideshowPagerScroller.offsetForIndex(
+                index,
+                pageWidth
+              ),
+              index,
+            })}
+            onScroll={onScroll}
+            scrollEventThrottle={16}
+            onMomentumScrollEnd={onMomentumScrollEnd}
+            onScrollToIndexFailed={onScrollToIndexFailed}
+            initialScrollIndex={safeIndex > 0 ? safeIndex : undefined}
+            extraData={safeIndex}
+            renderItem={({ item }) => (
+              <SlidePage
+                slide={item}
+                width={pageWidth}
+                height={pageHeight}
+                centerContent={centerContent}
+                brandLabel={centerContent ? step.brandLabel : undefined}
+              />
+            )}
           />
-        )}
-      />
+        ) : null}
+      </View>
 
       <View style={styles.dotsWrap}>
         <OnboardingPageDotIndicator
           count={slides.length}
-          activeIndex={activeSlideIndex}
+          activeIndex={safeIndex}
           activeColor={darkDots ? "#FFFFFF" : ONBOARDING_INK}
           inactiveColor={
             darkDots ? "rgba(255,255,255,0.35)" : "rgba(61,56,50,0.22)"
@@ -135,56 +196,87 @@ export function OnboardingSlideshowStep({
 
 interface SlidePageProps {
   slide: OnboardingSlide;
+  width: number;
+  height: number;
   centerContent: boolean;
   brandLabel?: string;
-  height: number;
 }
 
-function SlidePage({ slide, centerContent, brandLabel, height }: SlidePageProps) {
+function SlidePage({
+  slide,
+  width,
+  height,
+  centerContent,
+  brandLabel,
+}: SlidePageProps) {
   const theme = useTheme();
   const pastel = OnboardingPastelPalette.forTone(slide.pastel ?? "default", theme.isDark);
   const textColor = pastel.text;
   const mutedColor = pastel.textMuted;
+  const visual = slide.graphic ? (
+    <View style={[styles.graphicWrap, centerContent && styles.graphicWrapCentered]}>
+      <OnboardingSlideGraphic type={slide.graphic} />
+    </View>
+  ) : slide.icon ? (
+    <View style={styles.iconWrap}>
+      <Ionicons
+        name={slide.icon as keyof typeof Ionicons.glyphMap}
+        size={88}
+        color={textColor}
+      />
+    </View>
+  ) : null;
 
   return (
     <View
       style={[
         styles.page,
         centerContent && styles.pageCentered,
-        { width: PAGE_WIDTH, height: height > 0 ? height : undefined },
+        { width, height: height > 0 ? height : undefined },
       ]}
     >
       {!centerContent ? <View style={styles.upperSpacer} /> : null}
 
+      {centerContent ? visual : null}
+
       {brandLabel ? (
-        <ThemedText variant="title" style={[styles.brandInline, { color: textColor }]}>
+        <ThemedText
+          variant="title"
+          style={[
+            styles.brandInline,
+            centerContent && styles.brandInlineCentered,
+            { color: textColor },
+          ]}
+        >
           {brandLabel}
         </ThemedText>
       ) : null}
 
-      {slide.graphic ? (
-        <View style={styles.graphicWrap}>
-          <OnboardingSlideGraphic type={slide.graphic} />
-        </View>
-      ) : slide.icon ? (
-        <View style={styles.iconWrap}>
-          <Ionicons
-            name={slide.icon as keyof typeof Ionicons.glyphMap}
-            size={88}
-            color={textColor}
-          />
-        </View>
-      ) : null}
+      {!centerContent ? visual : null}
 
-      <View style={styles.textBlock}>
+      <View style={[styles.textBlock, centerContent && styles.textBlockCentered]}>
         {slide.title ? (
-          <ThemedText variant="title" style={[styles.title, { color: textColor }]}>
+          <ThemedText
+            variant="title"
+            style={[
+              styles.title,
+              centerContent && styles.titleCentered,
+              { color: textColor },
+            ]}
+          >
             {slide.title}
           </ThemedText>
         ) : null}
 
         {slide.body ? (
-          <ThemedText variant="body" style={[styles.body, { color: mutedColor }]}>
+          <ThemedText
+            variant="body"
+            style={[
+              styles.body,
+              centerContent && styles.bodyCentered,
+              { color: mutedColor },
+            ]}
+          >
             {slide.body}
           </ThemedText>
         ) : null}
@@ -222,6 +314,13 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     letterSpacing: 0.4,
   },
+  brandInlineCentered: {
+    fontSize: 22,
+    lineHeight: 28,
+    marginTop: 4,
+    marginBottom: 10,
+    letterSpacing: 0.2,
+  },
   list: {
     flex: 1,
   },
@@ -232,7 +331,8 @@ const styles = StyleSheet.create({
   },
   pageCentered: {
     justifyContent: "center",
-    paddingBottom: 24,
+    paddingHorizontal: 36,
+    paddingBottom: 28,
   },
   upperSpacer: {
     height: 36,
@@ -243,10 +343,16 @@ const styles = StyleSheet.create({
   graphicWrap: {
     marginBottom: 16,
   },
+  graphicWrapCentered: {
+    marginBottom: 20,
+  },
   textBlock: {
     alignItems: "center",
     width: "100%",
     marginTop: 8,
+  },
+  textBlockCentered: {
+    marginTop: 0,
   },
   title: {
     textAlign: "center",
@@ -254,10 +360,19 @@ const styles = StyleSheet.create({
     lineHeight: 32,
     marginBottom: 16,
   },
+  titleCentered: {
+    fontSize: 28,
+    lineHeight: 34,
+    marginBottom: 14,
+  },
   body: {
     textAlign: "center",
     lineHeight: 24,
     maxWidth: 320,
+  },
+  bodyCentered: {
+    lineHeight: 25,
+    maxWidth: 300,
   },
   checks: {
     marginTop: 20,

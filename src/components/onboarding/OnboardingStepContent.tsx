@@ -20,6 +20,7 @@ import { OnboardingSlideshowStep } from "./steps/OnboardingSlideshowStep";
 import { OnboardingStreakStep } from "./steps/OnboardingStreakStep";
 import { OnboardingCommitmentStep } from "./steps/OnboardingCommitmentStep";
 import { OnboardingBenefitsGraphStep } from "./steps/OnboardingBenefitsGraphStep";
+import { OnboardingPersonalizedPlanStep } from "./steps/OnboardingPersonalizedPlanStep";
 import { OnboardingNameAnswerKeys } from "@/features/onboarding/OnboardingNameAnswerKeys";
 
 interface OnboardingStepContentProps {
@@ -29,10 +30,11 @@ interface OnboardingStepContentProps {
   onCalculationComplete?: () => void;
   onCalculationProgress?: (value: number) => void;
   slideshowIndex?: number;
-  onSlideshowSlideChange?: (index: number) => void;
+  onActiveSlideChange?: (index: number) => void;
   onComparisonAnimationComplete?: () => void;
   onTypingComplete?: () => void;
   onCommitmentLockIn?: () => void;
+  onContinue?: () => void;
 }
 
 /** Routes each onboarding step to its focused renderer. */
@@ -43,10 +45,11 @@ export function OnboardingStepContent({
   onCalculationComplete,
   onCalculationProgress,
   slideshowIndex = 0,
-  onSlideshowSlideChange,
+  onActiveSlideChange,
   onComparisonAnimationComplete,
   onTypingComplete,
   onCommitmentLockIn,
+  onContinue,
 }: OnboardingStepContentProps) {
   if (step.type === "welcome") {
     return <OnboardingWelcomeStep step={step} />;
@@ -128,7 +131,7 @@ export function OnboardingStepContent({
       <OnboardingSlideshowStep
         step={step}
         activeSlideIndex={slideshowIndex}
-        onActiveSlideChange={onSlideshowSlideChange}
+        onActiveSlideChange={onActiveSlideChange}
       />
     );
   }
@@ -157,6 +160,15 @@ export function OnboardingStepContent({
 
   if (step.type === "benefits-graph") {
     return <OnboardingBenefitsGraphStep step={step} />;
+  }
+
+  if (step.type === "personalized-plan") {
+    return (
+      <OnboardingPersonalizedPlanStep
+        answers={answers}
+        onContinue={() => onContinue?.()}
+      />
+    );
   }
 
   return null;

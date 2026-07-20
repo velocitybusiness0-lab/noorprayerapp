@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
+import { OnboardingDevSkipToPlanButton } from "@/components/onboarding/OnboardingDevSkipToPlanButton";
 import { OnboardingShell } from "@/components/onboarding/OnboardingShell";
 import { OnboardingStepContent } from "@/components/onboarding/OnboardingStepContent";
 import { OnboardingStepCatalog } from "@/features/onboarding/OnboardingStepCatalog";
@@ -8,10 +9,15 @@ import { OnboardingProgressPolicy } from "@/features/onboarding/OnboardingProgre
 import { OnboardingSlideshowController } from "@/features/onboarding/OnboardingSlideshowController";
 import { OnboardingNameAnswerKeys } from "@/features/onboarding/OnboardingNameAnswerKeys";
 import { OnboardingContinueInteractionGate } from "@/features/onboarding/OnboardingContinueInteractionGate";
+import { OnboardingFooterVisibilityPolicy } from "@/features/onboarding/OnboardingFooterVisibilityPolicy";
+import { OnboardingStepTransitionPolicy } from "@/features/onboarding/OnboardingStepTransitionPolicy";
 import { onboardingPermissionCoordinator } from "@/features/onboarding/OnboardingPermissionCoordinator";
 import { useOnboardingFlow } from "@/features/onboarding/useOnboardingFlow";
 import { useHideTabBar } from "@/features/navigation/useHideTabBar";
 import { useTheme } from "@/core/theme";
+
+const FIRST_ONBOARDING_STEP_ID = "welcome";
+const PERSONALIZED_PLAN_STEP_ID = "personalized-plan";
 
 export default function OnboardingScreen() {
   const theme = useTheme();
@@ -20,12 +26,23 @@ export default function OnboardingScreen() {
   const [calcProgress, setCalcProgress] = useState(0);
   const [slideshowIndex, setSlideshowIndex] = useState(0);
   const [stepInteractionReady, setStepInteractionReady] = useState(true);
+  const previousStepIndexRef = useRef(flow.stepIndex);
+  const transitionDirection = OnboardingStepTransitionPolicy.directionForIndexChange(
+    previousStepIndexRef.current,
+    flow.stepIndex
+  );
+  const transitionMode = OnboardingStepTransitionPolicy.modeForIncomingStep(
+    step?.type
+  );
 
   useHideTabBar("onboarding");
 
   useEffect(() => {
+    previousStepIndexRef.current = flow.stepIndex;
+  }, [flow.stepIndex]);
+  useEffect(() => {
     if (step?.type !== "calculation") setCalcProgress(0);
-    if (step?.type !== "slideshow") setSlideshowIndex(0);
+    setSlideshowIndex(0);
     setStepInteractionReady(
       !OnboardingContinueInteractionGate.needsReady(step?.type)
     );
@@ -63,7 +80,6 @@ export default function OnboardingScreen() {
   }, [flow.complete]);
 
   const advance = useCallback(() => {
-    setSlideshowIndex(0);
     setStepInteractionReady(true);
     const isLast = flow.stepIndex >= flow.totalSteps - 1;
     if (isLast) {
@@ -95,18 +111,34 @@ export default function OnboardingScreen() {
     }
 
     if (step.type === "slideshow") {
-      const nextIndex = OnboardingSlideshowController.nextSlideIndex(
+      const slideCount = OnboardingSlideshowController.slideCount(step.slides);
+      const currentIndex = OnboardingSlideshowController.clampIndex(
         slideshowIndex,
-        OnboardingSlideshowController.slideCount(step.slides)
+        slideCount
+      );
+      const nextIndex = OnboardingSlideshowController.nextSlideIndex(
+        currentIndex,
+        slideCount
       );
       if (nextIndex !== null) {
         setSlideshowIndex(nextIndex);
         return;
       }
+      // Reset before leaving so the next slideshow step never mounts mid-pager.
+      setSlideshowIndex(0);
+      advance();
+      return;
     }
 
     advance();
   }, [advance, flow.answers, flow.setAnswer, slideshowIndex, step]);
+
+  // Temporary/dev convenience: jump from first welcome page to personalized-plan (prepaywall).
+  const handleSkipToPersonalizedPlan = useCallback(() => {
+    setSlideshowIndex(0);
+    setStepInteractionReady(true);
+    flow.goToStepId(PERSONALIZED_PLAN_STEP_ID);
+  }, [flow.goToStepId]);
 
   if (!step) {
     return (
@@ -116,8 +148,11 @@ export default function OnboardingScreen() {
     );
   }
 
-  const hideContinue =
-    step.type === "calculation" || step.type === "commitment";
+  const hideContinue = OnboardingFooterVisibilityPolicy.shouldHideContinue(
+    step.type
+  );
+  const pinFooterInFlow =
+    OnboardingFooterVisibilityPolicy.shouldPinFooterInFlow(step.type);
 
   const continueDisabled = OnboardingContinueInteractionGate.needsReady(
     step.type
@@ -145,42 +180,62 @@ export default function OnboardingScreen() {
         )
       : step.continueLabel;
 
+  const showSkipToPlan =
+    flow.stepIndex === 0 || step.id === FIRST_ONBOARDING_STEP_ID;
+
+  /**
+   * Slideshow keeps a stable step key so the horizontal pager can swipe
+   * without remounting; Continue still scrolls via activeSlideIndex sync.
+   */
+  const contentTransitionKey = step.id;
+
   return (
-    <OnboardingShell
-      progress={headerProgress}
-      progressOpacity={progressOpacity}
-      showProgressBar={showProgressBar}
-      showBack={OnboardingProgressPolicy.shouldShowBack(step, flow.stepIndex)}
-      continueLabel={continueLabel}
-      continueDisabled={continueDisabled}
-      hideContinue={hideContinue}
-      keyboardAvoid={step.type === "name"}
-      centerContent={
-        step.type === "missed-graph" ||
-        (step.type === "slideshow" && step.contentPlacement === "center")
-      }
-      pastel={shellPastel ?? "default"}
-      onBack={flow.goBack}
-      onContinue={handleContinue}
-    >
-      <OnboardingStepContent
-        key={step.id}
-        step={step}
-        answers={flow.answers}
-        onAnswer={flow.setAnswer}
-        onCalculationComplete={advance}
-        onCalculationProgress={setCalcProgress}
-        slideshowIndex={slideshowIndex}
-        onSlideshowSlideChange={setSlideshowIndex}
-        onComparisonAnimationComplete={handleInteractionReady}
-        onTypingComplete={handleInteractionReady}
-        onCommitmentLockIn={advance}
-      />
-    </OnboardingShell>
+    <View style={styles.fill}>
+      <OnboardingShell
+        stepKey={contentTransitionKey}
+        transitionMode={transitionMode}
+        transitionDirection={transitionDirection}
+        progress={headerProgress}
+        progressOpacity={progressOpacity}
+        showProgressBar={showProgressBar}
+        showBack={OnboardingProgressPolicy.shouldShowBack(step, flow.stepIndex)}
+        continueLabel={continueLabel}
+        continueDisabled={continueDisabled}
+        hideContinue={hideContinue}
+        keyboardAvoid={step.type === "name"}
+        pinFooterInFlow={pinFooterInFlow}
+        centerContent={
+          step.type === "missed-graph" ||
+          step.type === "personalized-plan" ||
+          (step.type === "slideshow" && step.contentPlacement === "center")
+        }
+        pastel={shellPastel ?? "default"}
+        onBack={flow.goBack}
+        onContinue={handleContinue}
+      >
+        <OnboardingStepContent
+          step={step}
+          answers={flow.answers}
+          onAnswer={flow.setAnswer}
+          onCalculationComplete={advance}
+          onCalculationProgress={setCalcProgress}
+          slideshowIndex={slideshowIndex}
+          onActiveSlideChange={setSlideshowIndex}
+          onComparisonAnimationComplete={handleInteractionReady}
+          onTypingComplete={handleInteractionReady}
+          onCommitmentLockIn={advance}
+          onContinue={handleContinue}
+        />
+      </OnboardingShell>
+      {showSkipToPlan ? (
+        <OnboardingDevSkipToPlanButton onPress={handleSkipToPersonalizedPlan} />
+      ) : null}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  fill: { flex: 1 },
   loading: {
     flex: 1,
     alignItems: "center",

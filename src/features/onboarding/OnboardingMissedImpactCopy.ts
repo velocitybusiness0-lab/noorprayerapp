@@ -4,6 +4,11 @@ export class OnboardingMissedImpactCopy {
     return value.toLocaleString("en-US");
   }
 
+  /** Caption under the large yearly miss total. */
+  static yearlyMissLabel(): string {
+    return "Namaz missed in the last year";
+  }
+
   /** Primary cost label under the bar chart. */
   static costTitle(): string {
     return "dua chances lost";

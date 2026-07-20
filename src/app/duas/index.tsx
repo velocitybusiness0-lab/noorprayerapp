@@ -40,7 +40,7 @@ export default function DuasLibraryScreen() {
     [collections, query]
   );
   const saved = useMemo(
-    () => DuaLibraryPresenter.filterSaved(query),
+    () => DuaLibraryPresenter.filterSaved(query, savedIds),
     [savedIds, query]
   );
   const suggested = useMemo(

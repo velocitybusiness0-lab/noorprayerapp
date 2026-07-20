@@ -1,9 +1,11 @@
 import ActivityKit
 import AlarmKit
+import AppIntents
 import SwiftUI
 import WidgetKit
 
-/// AlarmKit Live Activity — lock screen + Dynamic Island countdown / snooze UI.
+/// AlarmKit Live Activity — lock screen + Dynamic Island countdown / alert UI.
+/// Open control uses MirajOpenAlarmIntent → Continue gate (`/alarm/ring`).
 @available(iOS 26.0, *)
 struct AlarmLiveActivity: Widget {
     var body: some WidgetConfiguration {
@@ -27,6 +29,9 @@ struct AlarmLiveActivity: Widget {
                     Text(context.attributes.presentation.alert.title)
                         .font(.headline)
                         .lineLimit(1)
+                }
+                DynamicIslandExpandedRegion(.bottom) {
+                    AlarmLiveActivityOpenControl(alarmID: AlarmLiveActivityAlarmID.resolve(context))
                 }
             } compactLeading: {
                 Image(systemName: MirajAlarmSymbol.name(for: context.attributes.metadata))
@@ -65,6 +70,7 @@ private struct AlarmLockScreenView: View {
     let context: ActivityViewContext<AlarmAttributes<MirajAlarmMetadata>>
 
     var body: some View {
+        let alarmID = AlarmLiveActivityAlarmID.resolve(context)
         HStack(spacing: 14) {
             Image(systemName: MirajAlarmSymbol.name(for: context.attributes.metadata))
                 .font(.title2)
@@ -84,9 +90,7 @@ private struct AlarmLockScreenView: View {
                 }
             }
             Spacer()
-            AlarmCountdownText(state: context.state)
-                .font(.title3.monospacedDigit().bold())
-                .foregroundStyle(.white)
+            AlarmLiveActivityOpenControl(alarmID: alarmID)
         }
     }
 }

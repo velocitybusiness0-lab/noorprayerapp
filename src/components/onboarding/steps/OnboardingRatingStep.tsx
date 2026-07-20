@@ -1,28 +1,25 @@
 import React, { useEffect, useRef } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { ScrollView, StyleSheet } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { ThemedText } from "@/components/primitives/ThemedText";
 import { ONBOARDING_INK } from "@/features/onboarding/OnboardingPastelPalette";
 import { OnboardingRatingCatalog } from "@/features/onboarding/catalog/OnboardingRatingCatalog";
 import { OnboardingRatingContinuePolicy } from "@/features/onboarding/OnboardingRatingContinuePolicy";
-import { OnboardingStoreReviewRequester } from "@/features/onboarding/OnboardingStoreReviewRequester";
+import { OnboardingRatingTypography } from "@/features/onboarding/OnboardingRatingVisuals";
 import { OnboardingStep } from "@/features/onboarding/onboarding.types";
 import { OnboardingRatingReviewCard } from "./OnboardingRatingReviewCard";
+import { OnboardingRatingStarsRow } from "./OnboardingRatingStarsRow";
 
 interface OnboardingRatingStepProps {
   step: OnboardingStep;
   onReady?: () => void;
 }
 
-const STAR_GOLD = "#E8B84A";
-
 /**
- * App Store rating prompt page: stars, social proof, reviews, then native review sheet.
- * Continue unlocks after a short delay so users are never stuck if the sheet is throttled.
+ * Social-proof rating page: stars, laurels, and reviews.
+ * Continue advances onboarding without opening a native review sheet.
  */
 export function OnboardingRatingStep({ step, onReady }: OnboardingRatingStepProps) {
-  const promptedRef = useRef(false);
   const onReadyRef = useRef(onReady);
 
   useEffect(() => {
@@ -30,18 +27,11 @@ export function OnboardingRatingStep({ step, onReady }: OnboardingRatingStepProp
   });
 
   useEffect(() => {
-    const reviewTimer = setTimeout(() => {
-      if (promptedRef.current) return;
-      promptedRef.current = true;
-      void OnboardingStoreReviewRequester.requestIfAvailable();
-    }, OnboardingRatingContinuePolicy.reviewPromptDelayMs);
-
     const unlockTimer = setTimeout(() => {
       onReadyRef.current?.();
     }, OnboardingRatingContinuePolicy.continueUnlockDelayMs);
 
     return () => {
-      clearTimeout(reviewTimer);
       clearTimeout(unlockTimer);
     };
   }, [step.id]);
@@ -57,20 +47,7 @@ export function OnboardingRatingStep({ step, onReady }: OnboardingRatingStepProp
           {step.title}
         </ThemedText>
 
-        <View style={styles.starsRow}>
-          <Ionicons name="leaf-outline" size={28} color={ONBOARDING_INK} style={styles.leaf} />
-          <View style={styles.stars}>
-            {Array.from({ length: 5 }, (_, index) => (
-              <Ionicons key={index} name="star" size={28} color={STAR_GOLD} />
-            ))}
-          </View>
-          <Ionicons
-            name="leaf-outline"
-            size={28}
-            color={ONBOARDING_INK}
-            style={[styles.leaf, styles.leafMirror]}
-          />
-        </View>
+        <OnboardingRatingStarsRow />
 
         {step.body ? (
           <ThemedText variant="body" style={styles.subtitle}>
@@ -109,39 +86,24 @@ const styles = StyleSheet.create({
     gap: 14,
     paddingTop: 8,
   },
-  title: {
+  title: OnboardingRatingTypography.style({
     color: ONBOARDING_INK,
     textAlign: "center",
     fontSize: 26,
     lineHeight: 32,
-  },
-  starsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  stars: {
-    flexDirection: "row",
-    gap: 4,
-  },
-  leaf: {
-    opacity: 0.72,
-  },
-  leafMirror: {
-    transform: [{ scaleX: -1 }],
-  },
-  subtitle: {
+  }),
+  subtitle: OnboardingRatingTypography.style({
     color: ONBOARDING_INK,
     textAlign: "center",
     opacity: 0.88,
     maxWidth: 320,
     lineHeight: 22,
-  },
-  socialProof: {
+  }),
+  socialProof: OnboardingRatingTypography.style({
     color: ONBOARDING_INK,
     opacity: 0.55,
     textAlign: "center",
-  },
+  }),
   reviews: {
     width: "100%",
     gap: 12,

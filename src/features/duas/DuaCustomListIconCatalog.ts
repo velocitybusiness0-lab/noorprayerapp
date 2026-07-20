@@ -32,7 +32,7 @@ export class DuaCustomListIconCatalog {
   }
 
   /** Next unused style, or round-robin when all are taken. */
-  static pickNext(existingIcons: Array<string | undefined>): DuaCustomListIconStyle {
+  static pickNext(existingIcons: (string | undefined)[]): DuaCustomListIconStyle {
     const used = new Set(
       existingIcons.filter((icon): icon is string => Boolean(icon))
     );

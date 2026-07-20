@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { ThemedText } from "@/components/primitives/ThemedText";
 import { ONBOARDING_INK } from "@/features/onboarding/OnboardingPastelPalette";
 import { OnboardingRatingReview } from "@/features/onboarding/catalog/OnboardingRatingCatalog";
+import { OnboardingRatingReviewAvatar } from "./OnboardingRatingReviewAvatar";
 
 interface OnboardingRatingReviewCardProps {
   review: OnboardingRatingReview;
@@ -17,31 +18,32 @@ export function OnboardingRatingReviewCard({
 }: OnboardingRatingReviewCardProps) {
   return (
     <View style={styles.card}>
-      <View style={styles.header}>
-        <View style={styles.avatar}>
-          <ThemedText variant="bodyStrong" style={styles.avatarText}>
-            {review.initials}
-          </ThemedText>
-        </View>
-        <View style={styles.meta}>
-          <ThemedText variant="bodyStrong" style={styles.name}>
-            {review.name}
-          </ThemedText>
-          {review.handle ? (
-            <ThemedText variant="caption" style={styles.handle}>
-              {review.handle}
+      <OnboardingRatingReviewAvatar
+        avatarSource={review.avatarSource}
+        accessibilityLabel={`${review.name} avatar`}
+      />
+      <View style={styles.content}>
+        <View style={styles.header}>
+          <View style={styles.meta}>
+            <ThemedText variant="bodyStrong" style={styles.name}>
+              {review.name}
             </ThemedText>
-          ) : null}
+            {review.handle ? (
+              <ThemedText variant="caption" style={styles.handle}>
+                {review.handle}
+              </ThemedText>
+            ) : null}
+          </View>
+          <View style={styles.stars}>
+            {Array.from({ length: review.rating }, (_, index) => (
+              <Ionicons key={index} name="star" size={12} color={STAR_GOLD} />
+            ))}
+          </View>
         </View>
-        <View style={styles.stars}>
-          {Array.from({ length: review.rating }, (_, index) => (
-            <Ionicons key={index} name="star" size={12} color={STAR_GOLD} />
-          ))}
-        </View>
+        <ThemedText variant="body" style={styles.body}>
+          {review.review}
+        </ThemedText>
       </View>
-      <ThemedText variant="body" style={styles.body}>
-        {review.review}
-      </ThemedText>
     </View>
   );
 }
@@ -49,6 +51,8 @@ export function OnboardingRatingReviewCard({
 const styles = StyleSheet.create({
   card: {
     width: "100%",
+    flexDirection: "row",
+    alignItems: "flex-start",
     borderRadius: 16,
     padding: 16,
     gap: 12,
@@ -56,26 +60,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(61,56,50,0.1)",
   },
+  content: {
+    flex: 1,
+    flexShrink: 1,
+    gap: 8,
+    minWidth: 0,
+  },
   header: {
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: 12,
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(107,158,136,0.28)",
-  },
-  avatarText: {
-    color: ONBOARDING_INK,
-    fontSize: 14,
+    gap: 8,
   },
   meta: {
     flex: 1,
     gap: 2,
+    minWidth: 0,
   },
   name: {
     color: ONBOARDING_INK,

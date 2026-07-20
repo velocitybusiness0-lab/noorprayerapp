@@ -49,6 +49,8 @@ interface OnboardingShellProps {
   centerContent?: boolean;
   /** Reduced top inset for long scroll pages (e.g. symptoms). */
   compactTopPadding?: boolean;
+  /** Allow children to paint past the content pad (e.g. plan benefit chips). */
+  clipContent?: boolean;
   pastel?: OnboardingPastelTone;
   onBack: () => void;
   onContinue: () => void;
@@ -74,6 +76,7 @@ export function OnboardingShell({
   pinFooterInFlow = false,
   centerContent = false,
   compactTopPadding = false,
+  clipContent = true,
   pastel = "default",
   onBack,
   onContinue,
@@ -170,6 +173,7 @@ export function OnboardingShell({
       <View
         style={[
           styles.content,
+          !clipContent && styles.contentOverflowVisible,
           {
             paddingTop: contentTopPadding,
             paddingBottom: footerBlock,
@@ -233,6 +237,9 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
     overflow: "hidden",
+  },
+  contentOverflowVisible: {
+    overflow: "visible",
   },
   footer: {
     position: "absolute",

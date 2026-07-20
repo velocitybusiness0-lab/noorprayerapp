@@ -31,9 +31,9 @@ export interface OnboardingPastelView {
 
 /** Onboarding screen backgrounds — full-page tones use black-readable fills. */
 export class OnboardingPastelPalette {
-  /** True when the tone uses a dark fill with light foreground copy. */
-  static isDarkTone(tone: OnboardingPastelTone): boolean {
-    return tone === "hardRed" || tone === "deepBlue" || tone === "hope";
+  /** Pastel onboarding tones use dark ink; reserved for any future dark fills. */
+  static isDarkTone(_tone: OnboardingPastelTone): boolean {
+    return false;
   }
 
   static forTone(tone: OnboardingPastelTone, isDark: boolean): OnboardingPastelView {
@@ -77,27 +77,27 @@ export class OnboardingPastelPalette {
         };
       case "hardRed":
         return {
-          background: "#DC2626",
-          surface: "#B91C1C",
-          text: "#FFFFFF",
-          textMuted: "rgba(255,255,255,0.92)",
-          accent: "#FECACA",
+          background: "#F3B8B2",
+          surface: "#EDAAA3",
+          text: ONBOARDING_INK,
+          textMuted: ONBOARDING_INK,
+          accent: "#C45C54",
         };
       case "deepBlue":
         return {
-          background: "#2563EB",
-          surface: "#1D4ED8",
-          text: "#FFFFFF",
-          textMuted: "rgba(255,255,255,0.92)",
-          accent: "#BFDBFE",
+          background: "#A9C7E6",
+          surface: "#95B8DB",
+          text: ONBOARDING_INK,
+          textMuted: ONBOARDING_INK,
+          accent: "#3B6FA8",
         };
       case "hope":
         return {
-          background: "#2563EB",
-          surface: "#1D4ED8",
-          text: "#FFFFFF",
-          textMuted: "rgba(255,255,255,0.92)",
-          accent: "#BFDBFE",
+          background: "#A9C7E6",
+          surface: "#95B8DB",
+          text: ONBOARDING_INK,
+          textMuted: ONBOARDING_INK,
+          accent: "#3B6FA8",
         };
       case "green":
         return {

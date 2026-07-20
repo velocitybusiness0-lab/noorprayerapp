@@ -14,6 +14,9 @@ import {
 } from "@/components/scan/ObjectHuntTargetPickerModal";
 import { objectHuntTargets } from "@/features/scan/ObjectHuntTargetPool";
 
+const FRAME_SIZE = 260;
+const MISSION_CONTENT_WIDTH = FRAME_SIZE - 40;
+
 interface ScanOverlayProps {
   missionTarget: ScanTarget | null;
   targets: ScanTarget[];
@@ -26,7 +29,6 @@ interface ScanOverlayProps {
   showCloseButton?: boolean;
   onClose?: () => void;
   onChangeMissionTarget?: (target: ScanTarget) => void;
-  onManualConfirm?: () => void;
 }
 
 /** Object-hunt guidance over the camera. */
@@ -42,7 +44,6 @@ export function ScanOverlay({
   showCloseButton = false,
   onClose,
   onChangeMissionTarget,
-  onManualConfirm,
 }: ScanOverlayProps) {
   const insets = useSafeAreaInsets();
   const [pickerVisible, setPickerVisible] = useState(false);
@@ -90,34 +91,50 @@ export function ScanOverlay({
         {succeeded ? (
           <View style={styles.status}>
             <Ionicons name="checkmark-circle" size={40} color="#FFFFFF" />
-            <ThemedText variant="heading" style={styles.white}>
+            <ThemedText variant="heading" style={[styles.white, styles.boxedText]}>
               Mission complete
             </ThemedText>
           </View>
         ) : missionTarget ? (
           <View style={styles.mission}>
             <Ionicons name={iconName} size={36} color="#FFFFFF" />
-            <ThemedText variant="heading" style={styles.white}>
+            <ThemedText
+              variant="heading"
+              style={[styles.white, styles.boxedText]}
+              numberOfLines={2}
+            >
               Find: {missionTarget.label}
             </ThemedText>
-            <ThemedText variant="body" style={[styles.white, styles.instruction]}>
+            <ThemedText
+              variant="body"
+              style={[styles.white, styles.boxedText]}
+              numberOfLines={3}
+            >
               {missionTarget.instruction}
             </ThemedText>
             {isAutomatic && streakProgress.current > 0 ? (
-              <ThemedText variant="caption" style={styles.white}>
+              <ThemedText variant="caption" style={[styles.white, styles.boxedText]}>
                 Locking in… {streakProgress.current}/{streakProgress.required}
               </ThemedText>
             ) : null}
           </View>
         ) : (
-          <>
-            <ThemedText variant="caption" style={[styles.white, styles.accepted]}>
+          <View style={styles.mission}>
+            <ThemedText
+              variant="caption"
+              style={[styles.white, styles.accepted, styles.boxedText]}
+              numberOfLines={2}
+            >
               Accepted: {targets.map((t) => t.label).join(" · ")}
             </ThemedText>
-            <ThemedText variant="body" style={[styles.white, styles.instruction]}>
+            <ThemedText
+              variant="body"
+              style={[styles.white, styles.boxedText]}
+              numberOfLines={2}
+            >
               Wrong item? Alarm keeps ringing.
             </ThemedText>
-          </>
+          </View>
         )}
       </View>
 
@@ -125,31 +142,23 @@ export function ScanOverlay({
         {!succeeded && (
           <ThemedText
             variant="caption"
-            style={[styles.white, (rejected || wrongMission) && styles.rejectedText]}
+            style={[
+              styles.white,
+              styles.footerMessage,
+              (rejected || wrongMission) && styles.rejectedText,
+            ]}
+            numberOfLines={3}
           >
             {scanning ? message : message}
           </ThemedText>
         )}
-        {!succeeded && onManualConfirm ? (
-          <Button
-            label={
-              isAutomatic
-                ? "I found it — dismiss alarm"
-                : needsDevBuild
-                  ? "Verify manually (build lacks scan module)"
-                  : "I can see it — dismiss alarm"
-            }
-            variant={isAutomatic ? "secondary" : "primary"}
-            onPress={() => {
-              haptics.success();
-              onManualConfirm();
-            }}
-            style={styles.manualButton}
-          />
-        ) : null}
         {!succeeded && needsDevBuild ? (
           <>
-            <ThemedText variant="caption" style={[styles.white, styles.devBuildHint]}>
+            <ThemedText
+              variant="caption"
+              style={[styles.white, styles.devBuildHint]}
+              numberOfLines={4}
+            >
               {ScanDevBuildGuide.summary} Install build {MIRAJ_DEV_BUILD_ID} — Metro reload
               cannot add native modules.
             </ThemedText>
@@ -190,22 +199,57 @@ const styles = StyleSheet.create({
     top: 0,
     zIndex: 1,
   },
-  reticle: { flex: 1, alignItems: "center", justifyContent: "center", gap: 14, paddingHorizontal: 24 },
+  reticle: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 14,
+    paddingHorizontal: 24,
+  },
   frame: {
-    width: 260,
-    height: 260,
+    width: FRAME_SIZE,
+    height: FRAME_SIZE,
     borderRadius: 28,
     borderWidth: 2,
     borderColor: "rgba(255,255,255,0.85)",
   },
   frameRejected: { borderColor: "rgba(255,120,120,0.95)" },
   frameLocking: { borderColor: "rgba(120,255,180,0.95)" },
-  status: { position: "absolute", alignItems: "center", gap: 8 },
-  mission: { position: "absolute", alignItems: "center", gap: 8, paddingHorizontal: 20 },
+  status: {
+    position: "absolute",
+    width: MISSION_CONTENT_WIDTH,
+    maxWidth: "100%",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 8,
+  },
+  mission: {
+    position: "absolute",
+    width: MISSION_CONTENT_WIDTH,
+    maxWidth: "100%",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 8,
+  },
+  boxedText: {
+    alignSelf: "stretch",
+    flexShrink: 1,
+    flexWrap: "wrap",
+    textAlign: "center",
+  },
   accepted: { opacity: 0.85 },
-  instruction: { maxWidth: 300 },
-  footer: { paddingHorizontal: 24, gap: 14, alignItems: "center" },
-  devBuildHint: { opacity: 0.9, maxWidth: 320 },
+  footer: {
+    paddingHorizontal: 24,
+    gap: 14,
+    alignItems: "center",
+    alignSelf: "stretch",
+  },
+  footerMessage: {
+    alignSelf: "stretch",
+    flexShrink: 1,
+    paddingHorizontal: 8,
+  },
+  devBuildHint: { opacity: 0.9, alignSelf: "stretch", maxWidth: 320 },
   manualButton: { alignSelf: "stretch" },
   rejectedText: { color: "#FFB4B4" },
 });

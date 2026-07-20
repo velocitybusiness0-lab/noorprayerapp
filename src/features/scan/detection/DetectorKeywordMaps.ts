@@ -77,9 +77,4 @@ export const VISION_KEYWORD_RULES: DetectorLabelRule[] = [
     detectorIds: ["yoga", "rug", "carpet"],
     minConfidence: 0.48,
   },
-  {
-    targetId: "mosque",
-    detectorIds: ["dome", "belltower", "clock_tower", "minaret", "mosque"],
-    minConfidence: 0.45,
-  },
 ];

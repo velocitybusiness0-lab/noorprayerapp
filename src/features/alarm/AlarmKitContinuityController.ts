@@ -68,9 +68,11 @@ export class AlarmKitContinuityController {
       }
 
       alarmContinuityStore.remember(alarmKitId, { title, slot: prayerSlot });
+      alarmRegistry.register(alarmKitId, prayerSlot);
       alarmKitOwnershipRegistry.mark(alarmKitId);
       clearAlarmRingNavigationGuard();
-      openAlarmRing(prayerSlot, alarmKitId);
+      // Re-arm must always re-surface Continue — never audio-only after stop/X.
+      openAlarmRing(prayerSlot, alarmKitId, { force: true });
 
       if (__DEV__) {
         console.info(`[AlarmKitContinuity] re-armed AlarmKit for ${alarmKitId}`);

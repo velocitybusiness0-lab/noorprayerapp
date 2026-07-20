@@ -3,8 +3,11 @@ import { router } from "expo-router";
 import { notificationManager } from "./NotificationManager";
 import { handleNotificationResponse } from "./notificationRouter";
 import { setAlarmRingHandler } from "@/features/alarm/alarmRouter";
+import { alarmRingRouteBuilder } from "@/features/alarm/AlarmRingRouteBuilder";
 import { scanSessionGuard } from "@/features/scan/ScanSessionGuard";
 import { useAlarmKitListener } from "@/features/alarm/useAlarmKitListener";
+import { useAlarmObjectHuntLaunch } from "@/features/alarm/useAlarmObjectHuntLaunch";
+import { useAlarmRingPresentationRecovery } from "@/features/alarm/useAlarmRingPresentationRecovery";
 
 /**
  * Notification setup for prayer reminders only. Smart alarms use AlarmKit /
@@ -14,9 +17,7 @@ export function useNotificationSetup(): void {
   useEffect(() => {
     setAlarmRingHandler((slot, alarmId) => {
       if (scanSessionGuard.isOpen(alarmId)) return;
-      router.replace(
-        `/alarm/ring?slot=${slot}&alarmId=${encodeURIComponent(alarmId)}`
-      );
+      router.replace(alarmRingRouteBuilder.build(slot, alarmId));
     });
 
     return () => {
@@ -25,6 +26,8 @@ export function useNotificationSetup(): void {
   }, []);
 
   useAlarmKitListener();
+  useAlarmObjectHuntLaunch();
+  useAlarmRingPresentationRecovery();
 
   useEffect(() => {
     void (async () => {

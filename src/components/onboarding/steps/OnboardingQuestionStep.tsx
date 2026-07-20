@@ -2,6 +2,7 @@ import React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { ONBOARDING_INK } from "@/features/onboarding/OnboardingPastelPalette";
 import { OnboardingOptionsPlacement } from "@/features/onboarding/OnboardingOptionsPlacement";
+import { OnboardingMultiChoiceSelectionManager } from "@/features/onboarding/OnboardingMultiChoiceSelectionManager";
 import { ThemedText } from "@/components/primitives/ThemedText";
 import { OnboardingOptionList } from "../OnboardingOptionList";
 import { OnboardingAnswers, OnboardingStep } from "@/features/onboarding/onboarding.types";
@@ -56,10 +57,14 @@ export function OnboardingQuestionStep({
           selectedIds={selectedIds}
           onSelect={(id) => {
             if (multi) {
-              const next = selectedIds.includes(id)
-                ? selectedIds.filter((item) => item !== id)
-                : [...selectedIds, id];
-              onAnswer(step.id, next);
+              onAnswer(
+                step.id,
+                OnboardingMultiChoiceSelectionManager.nextSelection(
+                  selectedIds,
+                  id,
+                  true
+                )
+              );
               return;
             }
             onAnswer(step.id, id);

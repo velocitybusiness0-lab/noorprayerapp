@@ -9,7 +9,15 @@ import { useQibla } from "@/features/qibla/useQibla";
 
 export default function QiblaScreen() {
   const theme = useTheme();
-  const { loading, error, heading, relativeAngle, aligned, qiblaBearing } = useQibla();
+  const {
+    loading,
+    error,
+    heading,
+    relativeAngle,
+    aligned,
+    qiblaBearing,
+    needsCalibration,
+  } = useQibla();
   const wasAligned = useRef(false);
 
   // Haptic pulse the moment the user lines up with the qibla.
@@ -42,6 +50,15 @@ export default function QiblaScreen() {
             <ThemedText variant="mono" color="textSecondary" style={styles.heading}>
               {`${Math.round(heading)}\u00b0`}
             </ThemedText>
+            {needsCalibration ? (
+              <ThemedText
+                variant="caption"
+                color="textTertiary"
+                style={styles.calibrate}
+              >
+                Hold phone flat — move in a figure-8 to calibrate
+              </ThemedText>
+            ) : null}
           </>
         )}
       </View>
@@ -58,4 +75,5 @@ const styles = StyleSheet.create({
   },
   error: { textAlign: "center", paddingHorizontal: 24 },
   heading: { marginTop: 8 },
+  calibrate: { textAlign: "center", paddingHorizontal: 32, marginTop: 4 },
 });

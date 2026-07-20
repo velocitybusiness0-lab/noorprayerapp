@@ -151,9 +151,9 @@ export const ONBOARDING_SETUP_STEPS: OnboardingStep[] = [
   {
     id: "rating",
     type: "rating",
-    title: "Give us a rating",
-    body: "Miraj was designed for Muslims building better salah habits.",
-    continueLabel: "Continue",
+    title: "Trusted by many",
+    body: "Miraj was designed for Muslims\nbuilding better salah habits.",
+    continueLabel: "Sounds good",
     pastel: "default",
   },
   {

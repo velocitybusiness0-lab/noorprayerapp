@@ -6,7 +6,7 @@ export type NativeClassify = (input: DetectionInput) => Promise<Detection[]>;
 /**
  * On-device CoreML detector. The actual model inference is injected as a
  * `NativeClassify` function so the model (trained via cloud-annotations for
- * `prayer mat / sink / masjid`) can be wired in a native-enabled build without
+ * `prayer mat / sink / bath`) can be wired in a native-enabled build without
  * changing the scan flow. See `assets/models/README.md`.
  */
 export class CoreMLObjectDetector implements ObjectDetector {

@@ -5,6 +5,8 @@ import Foundation
 
 private let liveActivityAppGroup = "group.insiders.miraj"
 private let liveActivitySnapshotKey = "prayerSnapshot"
+private let pendingObjectHuntAlarmIdKey = "miraj.pendingObjectHunt.alarmId"
+private let pendingObjectHuntLaunchedAtKey = "miraj.pendingObjectHunt.at"
 
 /// Bridges ActivityKit to JS so the app can run a prayer countdown Live
 /// Activity, and shares the widget snapshot via the app group. All entry
@@ -30,6 +32,18 @@ public class LiveActivityModule: Module {
             if #available(iOS 14.0, *) {
                 WidgetCenter.shared.reloadAllTimelines()
             }
+        }
+
+        // One-shot handoff from MirajOpenAlarmIntent (lock-screen → Continue gate).
+        Function("consumePendingObjectHuntAlarmId") { () -> String? in
+            guard let defaults = UserDefaults(suiteName: liveActivityAppGroup) else {
+                return nil
+            }
+            let alarmId = defaults.string(forKey: pendingObjectHuntAlarmIdKey)
+            defaults.removeObject(forKey: pendingObjectHuntAlarmIdKey)
+            defaults.removeObject(forKey: pendingObjectHuntLaunchedAtKey)
+            guard let alarmId, !alarmId.isEmpty else { return nil }
+            return alarmId
         }
 
         AsyncFunction("start") { (title: String, prayerName: String, symbol: String, endEpoch: Double) -> String? in

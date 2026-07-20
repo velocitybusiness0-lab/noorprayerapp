@@ -12,8 +12,6 @@ import { AlarmScheduler } from "@/features/alarm/AlarmScheduler";
 import { inAppAlarmScheduler } from "@/features/alarm/InAppAlarmScheduler";
 import { useAlarmSound } from "@/features/alarm/alarmSoundStore";
 import { alarmKitSoundFileName } from "@/features/alarm/alarmSounds";
-import { useMasjid } from "@/features/masjidMode/masjidStore";
-import { usePreDisarm } from "@/features/masjidMode/preDisarmStore";
 import { useHistory } from "@/features/history/historyStore";
 import { useDailyGoals } from "@/features/dailyGoals/dailyGoalsStore";
 import { widgetBridge } from "@/features/widgets/WidgetBridge";
@@ -38,9 +36,8 @@ const coordinator = new ModeCoordinator(
 const motivationScheduler = new MotivationReminderScheduler(notificationManager);
 
 /**
- * Single orchestration point: initialises services, keeps masjid presence
- * fresh, and re-syncs the ModeCoordinator whenever anything affecting
- * scheduling changes. When at a masjid, modes soften to a quiet reminder.
+ * Single orchestration point: initialises services and re-syncs the
+ * ModeCoordinator whenever anything affecting scheduling changes.
  */
 export function useAppBootstrap(): void {
   useNotificationSetup();
@@ -51,10 +48,6 @@ export function useAppBootstrap(): void {
   const remindersEnabled = useReminderPrefs((s) => s.enabled);
   const motivationCategories = useMotivationPrefs((s) => s.enabledCategories);
   const motivationNotifications = useMotivationPrefs((s) => s.notifications);
-  const masjidEnabled = useMasjid((s) => s.enabled);
-  const atMosque = useMasjid((s) => s.atMosque);
-  const updatePresence = useMasjid((s) => s.updatePresence);
-  const preDisarmFlags = usePreDisarm((s) => s.flags);
 
   useEffect(() => {
     void useHistory.getState().init();
@@ -64,10 +57,6 @@ export function useAppBootstrap(): void {
   }, []);
 
   useEffect(() => {
-    if (location) updatePresence(location);
-  }, [location, updatePresence]);
-
-  useEffect(() => {
     if (!today) return;
     const snapshot = widgetSnapshotBuilder.build(today);
     widgetBridge.publish(snapshot);
@@ -75,12 +64,8 @@ export function useAppBootstrap(): void {
   }, [today]);
 
   const isModeEnabled = useCallback(
-    (prayer: ObligatoryPrayer, mode: SalahMode) => {
-      if (masjidEnabled && atMosque) return mode === "reminder";
-      if (usePreDisarm.getState().isPreDisarmed(prayer)) return mode === "reminder";
-      return enabledModes.includes(mode);
-    },
-    [enabledModes, masjidEnabled, atMosque]
+    (_prayer: ObligatoryPrayer, mode: SalahMode) => enabledModes.includes(mode),
+    [enabledModes]
   );
 
   useEffect(() => {
@@ -96,7 +81,9 @@ export function useAppBootstrap(): void {
       soundName: alarmKitSoundFileName(selectedSoundId),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [today, location, manager, enabledModes, alerts, selectedSoundId, remindersEnabled, masjidEnabled, atMosque, preDisarmFlags]);
+  }, [today, location, manager, enabledModes, alerts, selectedSoundId, remindersEnabled]);
+
+  const motivationWindowKey = motivationNotifications.windowPresets.join(",");
 
   useEffect(() => {
     void motivationScheduler.sync(getMotivationPrefsSnapshot());
@@ -104,6 +91,6 @@ export function useAppBootstrap(): void {
     motivationCategories,
     motivationNotifications.enabled,
     motivationNotifications.quantityPerDay,
-    motivationNotifications.windowPresets.join(","),
+    motivationWindowKey,
   ]);
 }

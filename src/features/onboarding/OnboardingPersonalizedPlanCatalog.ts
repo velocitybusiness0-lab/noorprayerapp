@@ -1,183 +1,192 @@
 import { Ionicons } from "@expo/vector-icons";
+import { PersonalizedPlanChipAccentId } from "./OnboardingPersonalizedPlanChipAccentPalette";
 
 export type PersonalizedPlanIconName = keyof typeof Ionicons.glyphMap;
 
-export interface PersonalizedPlanKeywordItem {
+export interface PersonalizedPlanBenefitChip {
   id: string;
-  keyword: string;
-  rest: string;
+  label: string;
   icon: PersonalizedPlanIconName;
+  accent: PersonalizedPlanChipAccentId;
 }
 
-export interface PersonalizedPlanHabitStep {
+export interface PersonalizedPlanIncludesItem {
   id: string;
   title: string;
-  body: string;
+  description: string;
   icon: PersonalizedPlanIconName;
 }
 
-export interface PersonalizedPlanQuote {
-  quote: string;
-  attribution: string;
+export interface PersonalizedPlanTextSegment {
+  text: string;
+  bold?: boolean;
 }
 
-export interface PersonalizedPlanMotivationBenefit {
+export interface PersonalizedPlanOutcomeRow {
   id: string;
-  keyword: string;
-  rest: string;
-  icon: PersonalizedPlanIconName;
+  segments: readonly PersonalizedPlanTextSegment[];
 }
 
-/** Static Miraj copy + icons for the personalized-plan page. */
+export interface PersonalizedPlanTestimonial {
+  id: string;
+  name: string;
+  handle: string;
+  quote: string;
+  rating: number;
+}
+
+export interface PersonalizedPlanSetupField {
+  id: string;
+  label: string;
+  value: string;
+}
+
+/** Static Miraj copy for the personalized-plan pre-paywall page. */
 export class OnboardingPersonalizedPlanCatalog {
-  static readonly goalLead = "Return to praying all five with presence by:";
+  static readonly lead =
+    "Your custom plan is ready when you are. Miraj walks with you back to salah, one gentle step at a time.";
 
-  static readonly socialProofCaption =
-    "For Muslims who want salah to feel sincere again";
+  static readonly benefitsTitle = "Become more consistent with Miraj";
 
-  /** Sole product / features block on this page. */
-  static readonly howTitle = "How Miraj helps";
+  static readonly benefitsSubtitle = "Steadier salah. Softer mornings. A clearer heart.";
 
-  static readonly protectTitle = "Return to Allah one salah at a time";
+  static readonly planIncludesTitle = "Your plan";
 
-  static readonly habitsTitle = "Who you are becoming";
+  static readonly planIncludesSubheader = "Here's what's ready for you";
 
-  static readonly habitsBody =
-    "Quiet practices that turn longing into a steady Muslim life, one sincere prayer at a time.";
+  static readonly socialProofLine = "Built for daily salah";
 
-  static readonly habitsHowLead = "Day by day, you are learning to:";
+  static readonly ratingLine = "4.9 average rating";
 
-  static readonly motivationTitle = "Your heart was made for this return";
+  static readonly outcomesRatingLine = "Loved by Muslims worldwide";
 
-  static readonly motivationBody =
-    "Willpower alone fades when mornings are hard. What lasts is a softer resolve: to stand, to remember, and to come back to Allah with peace instead of pressure.";
+  static readonly secondaryQuote =
+    "Best choice I made for my mornings. Fajr finally feels possible again.";
 
-  static readonly discountTitle = "Special Discount!";
+  static readonly secondaryAttribution = "Anonymous";
 
-  static readonly discountBody = "Get 80% off on Miraj Premium!";
+  static readonly comeThisFar = "You've come this far.";
 
-  static readonly discountCta = "Claim Now";
+  static readonly investHeadline = "Invest in your salah and start your journey.";
 
-  static readonly trustLine = "Begin with Bismillah";
+  static readonly ctaLabel = "Start my plan";
 
-  static readonly helpItems: readonly PersonalizedPlanKeywordItem[] = [
+  static readonly trustLine = "Cancel anytime · Begin with Bismillah";
+
+  static readonly termsLabel = "Terms";
+
+  static readonly privacyLabel = "Privacy";
+
+  static readonly restoreLabel = "Restore";
+
+  /** Three strong Miraj features for the cream “Your plan” card. */
+  static readonly planIncludesItems: readonly PersonalizedPlanIncludesItem[] = [
     {
       id: "alarms",
-      keyword: "Prayer alarms",
-      rest: " so you rise and stand on time",
+      title: "Prayer alarms",
+      description: "Gentle Fajr wake-ups that actually get you up",
       icon: "alarm-outline",
     },
     {
-      id: "scan",
-      keyword: "Wake receipts",
-      rest: " that confirm you truly got up for Fajr",
+      id: "hunt",
+      title: "Object hunt",
+      description: "Scan to dismiss so you truly leave bed",
       icon: "scan-outline",
     },
     {
-      id: "duas",
-      keyword: "Duas ready",
-      rest: " when your heart needs words",
-      icon: "book-outline",
-    },
-    {
-      id: "reminders",
-      keyword: "Gentle reminders",
-      rest: " that keep salah close through the day",
-      icon: "notifications-outline",
+      id: "qibla",
+      title: "Qibla & times",
+      description: "Direction and timetable when you need them",
+      icon: "compass-outline",
     },
   ];
 
-  static readonly howQuote: PersonalizedPlanQuote = {
-    quote:
-      "I used to miss Fajr more than I want to admit. Small reminders and a clear rhythm finally made salah feel steady again.",
-    attribution: "a Miraj user",
-  };
-
-  static readonly protectItems: readonly PersonalizedPlanKeywordItem[] = [
-    {
-      id: "guard",
-      keyword: "Guard your prayer",
-      rest: " before the world pulls you away",
-      icon: "shield-checkmark-outline",
-    },
-    {
-      id: "presence",
-      keyword: "Pray with presence",
-      rest: " so each rakah feels intentional",
-      icon: "heart-outline",
-    },
-    {
-      id: "return",
-      keyword: "Return gently",
-      rest: " when you miss, without shame",
-      icon: "refresh-outline",
-    },
-    {
-      id: "barakah",
-      keyword: "Seek barakah",
-      rest: " in the quiet consistency of five daily meetings with Allah",
-      icon: "sparkles-outline",
-    },
-  ];
-
-  static readonly protectQuote: PersonalizedPlanQuote = {
-    quote:
-      "I stopped treating missed prayers as the end of my story. Returning became part of my worship.",
-    attribution: "a Miraj user",
-  };
-
-  static readonly habitSteps: readonly PersonalizedPlanHabitStep[] = [
+  /** Ordered for 2 / 3 / 2 staggered chip rows (see BenefitChipRowLayout).
+   *  Middle row keeps the three shortest labels so borders stay on-screen. */
+  static readonly benefitChips: readonly PersonalizedPlanBenefitChip[] = [
+    { id: "imaan", label: "Improved imaan", icon: "heart-outline", accent: "sky" },
+    { id: "presence", label: "More presence", icon: "leaf-outline", accent: "lavender" },
     {
       id: "fajr",
-      title: "Guard Fajr",
-      body: "Rise for the first prayer before the day claims your attention.",
+      label: "Stronger Fajr",
+      icon: "sunny-outline",
+      accent: "sage",
+    },
+    { id: "duas", label: "Deeper duas", icon: "book-outline", accent: "teal" },
+    { id: "qibla", label: "Clearer qibla", icon: "compass-outline", accent: "coral" },
+    {
+      id: "salah",
+      label: "Steadier salah",
       icon: "moon-outline",
+      accent: "sand",
     },
     {
-      id: "presence",
-      title: "Slow into salah",
-      body: "Pause long enough for each prayer to feel sincere, not rushed.",
-      icon: "leaf-outline",
-    },
-    {
-      id: "dhikr",
-      title: "Keep Allah near",
-      body: "Carry remembrance between the five so your heart stays awake.",
-      icon: "heart-outline",
-    },
-    {
-      id: "return",
-      title: "Return without shame",
-      body: "Come back gently whenever you drift. Mercy is part of the path.",
-      icon: "refresh-outline",
+      id: "mornings",
+      label: "Calmer mornings",
+      icon: "partly-sunny-outline",
+      accent: "mint",
     },
   ];
 
-  static readonly motivationBenefits: readonly PersonalizedPlanMotivationBenefit[] =
-    [
-      {
-        id: "sincerity",
-        keyword: "Sincerity",
-        rest: " that deepens each time you stand before Allah",
-        icon: "sparkles-outline",
-      },
-      {
-        id: "peace",
-        keyword: "Peace",
-        rest: " that settles when prayer feels like coming home",
-        icon: "water-outline",
-      },
-      {
-        id: "discipline",
-        keyword: "Discipline with mercy",
-        rest: " so effort grows from love, not from guilt",
-        icon: "compass-outline",
-      },
-      {
-        id: "identity",
-        keyword: "A clearer identity",
-        rest: " as a servant who shows up, again and again",
-        icon: "person-outline",
-      },
-    ];
+  static readonly outcomeRows: readonly PersonalizedPlanOutcomeRow[] = [
+    {
+      id: "fajr",
+      segments: [
+        { text: "Wake for Fajr " },
+        { text: "without hitting snooze", bold: true },
+        { text: " again." },
+      ],
+    },
+    {
+      id: "hunt",
+      segments: [
+        { text: "Use object hunt " },
+        { text: "so you truly get out of bed", bold: true },
+        { text: "." },
+      ],
+    },
+    {
+      id: "present",
+      segments: [
+        { text: "Feel " },
+        { text: "more present", bold: true },
+        { text: " in every salah, every day." },
+      ],
+    },
+    {
+      id: "relationship",
+      segments: [
+        { text: "Build a " },
+        { text: "steadier relationship", bold: true },
+        { text: " with Allah through consistency." },
+      ],
+    },
+  ];
+
+  static readonly testimonials: readonly PersonalizedPlanTestimonial[] = [
+    {
+      id: "amina",
+      name: "Amina K.",
+      handle: "@amina.k",
+      rating: 5,
+      quote:
+        "The Fajr alarm with object hunt finally gets me out of bed. I have not missed a morning prayer in weeks.",
+    },
+    {
+      id: "yusuf",
+      name: "Yusuf R.",
+      handle: "@yusuf.r",
+      rating: 5,
+      quote:
+        "Confirming namaz after I pray keeps me honest, and my streak is the longest it has ever been.",
+    },
+    {
+      id: "sara",
+      name: "Sara M.",
+      handle: "@sara.m",
+      rating: 5,
+      quote:
+        "Accurate prayer times and Qibla mean I never guess. The duas library feels like a blessing.",
+    },
+  ];
 }

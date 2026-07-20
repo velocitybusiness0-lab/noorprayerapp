@@ -5,6 +5,7 @@ import { alarmFireRegistry } from "./AlarmFireRegistry";
 import { alarmSessionCoordinator } from "./AlarmSessionCoordinator";
 import { alarmKitOwnershipRegistry } from "./AlarmKitOwnershipRegistry";
 import { alarmContinuityStore } from "./AlarmContinuityStore";
+import { alarmRingPresentationGate } from "./AlarmRingPresentationGate";
 
 /** Ends an active prayer alarm only after object hunt succeeds. */
 class ActiveAlarmController {
@@ -17,6 +18,7 @@ class ActiveAlarmController {
     }
     // Mark idle before stop so continuity controller does not re-arm.
     alarmSessionCoordinator.onDismissed();
+    alarmRingPresentationGate.clear();
     await alarmRingLoop.stop();
     if (!alarmId) return;
     await alarmManager.stop(alarmId);

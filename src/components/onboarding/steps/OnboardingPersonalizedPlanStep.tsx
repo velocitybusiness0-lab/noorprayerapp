@@ -1,12 +1,15 @@
 import React, { useMemo } from "react";
-import { ScrollView, StyleSheet } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
+import { OnboardingPersonalizedPlanBenefitsSection } from "@/components/onboarding/personalizedPlan/OnboardingPersonalizedPlanBenefitsSection";
+import { OnboardingPersonalizedPlanClosingSection } from "@/components/onboarding/personalizedPlan/OnboardingPersonalizedPlanClosingSection";
 import { OnboardingPersonalizedPlanDivider } from "@/components/onboarding/personalizedPlan/OnboardingPersonalizedPlanDivider";
-import { OnboardingPersonalizedPlanGoal } from "@/components/onboarding/personalizedPlan/OnboardingPersonalizedPlanGoal";
-import { OnboardingPersonalizedPlanHabitsSection } from "@/components/onboarding/personalizedPlan/OnboardingPersonalizedPlanHabitsSection";
-import { OnboardingPersonalizedPlanHero } from "@/components/onboarding/personalizedPlan/OnboardingPersonalizedPlanHero";
-import { OnboardingPersonalizedPlanMotivationSection } from "@/components/onboarding/personalizedPlan/OnboardingPersonalizedPlanMotivationSection";
-import { OnboardingPersonalizedPlanSocialProof } from "@/components/onboarding/personalizedPlan/OnboardingPersonalizedPlanSocialProof";
-import { OnboardingPersonalizedPlanValueSection } from "@/components/onboarding/personalizedPlan/OnboardingPersonalizedPlanValueSection";
+import {
+  OnboardingPersonalizedPlanFloatCta,
+  OnboardingPersonalizedPlanFloatCtaLayout,
+} from "@/components/onboarding/personalizedPlan/OnboardingPersonalizedPlanFloatCta";
+import { OnboardingPersonalizedPlanOutcomesSection } from "@/components/onboarding/personalizedPlan/OnboardingPersonalizedPlanOutcomesSection";
+import { OnboardingPersonalizedPlanSetupSection } from "@/components/onboarding/personalizedPlan/OnboardingPersonalizedPlanSetupSection";
+import { OnboardingPersonalizedPlanTopSection } from "@/components/onboarding/personalizedPlan/OnboardingPersonalizedPlanTopSection";
 import { OnboardingPersonalizedPlanPresenter } from "@/features/onboarding/OnboardingPersonalizedPlanPresenter";
 import { OnboardingAnswers } from "@/features/onboarding/onboarding.types";
 
@@ -15,7 +18,11 @@ interface OnboardingPersonalizedPlanStepProps {
   onContinue: () => void;
 }
 
-/** Final onboarding beat: scrollable Miraj plan page before entering the app. */
+/**
+ * Pre-paywall conversion page:
+ * Top → Benefits chips → Setup → Outcomes → Testimonials.
+ * Sage CTA floats over scroll near the bottom.
+ */
 export function OnboardingPersonalizedPlanStep({
   answers,
   onContinue,
@@ -26,75 +33,78 @@ export function OnboardingPersonalizedPlanStep({
   );
 
   return (
-    <ScrollView
-      style={styles.scroll}
-      contentContainerStyle={[styles.content, styles.contentPad]}
-      showsVerticalScrollIndicator={false}
-    >
-      <OnboardingPersonalizedPlanHero headline={model.headline} />
+    <View style={styles.root}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <OnboardingPersonalizedPlanTopSection
+          headline={model.headline}
+          lead={model.lead}
+        />
 
-      <OnboardingPersonalizedPlanGoal
-        lead={model.goalLead}
-        dateLabel={model.goalDateLabel}
-      />
+        <OnboardingPersonalizedPlanDivider compact />
 
-      <OnboardingPersonalizedPlanSocialProof
-        caption={model.socialProofCaption}
-      />
+        <OnboardingPersonalizedPlanBenefitsSection
+          title={model.benefitsTitle}
+          subtitle={model.benefitsSubtitle}
+          chips={model.benefitChips}
+        />
 
-      <OnboardingPersonalizedPlanDivider />
+        <OnboardingPersonalizedPlanDivider />
 
-      <OnboardingPersonalizedPlanValueSection
-        graphicKind="helps"
-        title={model.howTitle}
-        items={model.helpItems}
-        quote={model.howQuote}
-      />
+        <OnboardingPersonalizedPlanSetupSection
+          planIncludesTitle={model.planIncludesTitle}
+          planIncludesSubheader={model.planIncludesSubheader}
+          planIncludesItems={model.planIncludesItems}
+          fields={model.setupFields}
+          socialProofLine={model.socialProofLine}
+          ratingLine={model.ratingLine}
+        />
 
-      <OnboardingPersonalizedPlanDivider />
+        <OnboardingPersonalizedPlanDivider />
 
-      <OnboardingPersonalizedPlanValueSection
-        graphicKind="protect"
-        title={model.protectTitle}
-        items={model.protectItems}
-        quote={model.protectQuote}
-      />
+        <OnboardingPersonalizedPlanOutcomesSection
+          rows={model.outcomeRows}
+          ratingLine={model.outcomesRatingLine}
+        />
 
-      <OnboardingPersonalizedPlanDivider />
+        <OnboardingPersonalizedPlanDivider />
 
-      <OnboardingPersonalizedPlanHabitsSection
-        title={model.habitsTitle}
-        body={model.habitsBody}
-        howLead={model.habitsHowLead}
-        steps={model.habitSteps}
-      />
+        <OnboardingPersonalizedPlanClosingSection
+          testimonials={model.testimonials}
+          secondaryQuote={model.secondaryQuote}
+          secondaryAttribution={model.secondaryAttribution}
+          comeThisFar={model.comeThisFar}
+          investHeadline={model.investHeadline}
+          termsLabel={model.termsLabel}
+          privacyLabel={model.privacyLabel}
+          restoreLabel={model.restoreLabel}
+        />
+      </ScrollView>
 
-      <OnboardingPersonalizedPlanDivider />
-
-      <OnboardingPersonalizedPlanMotivationSection
-        title={model.motivationTitle}
-        body={model.motivationBody}
-        benefits={model.motivationBenefits}
-        discountTitle={model.discountTitle}
-        discountBody={model.discountBody}
-        discountCta={model.discountCta}
+      <OnboardingPersonalizedPlanFloatCta
+        label={model.ctaLabel}
         trustLine={model.trustLine}
-        onClaimDiscount={onContinue}
+        onContinue={onContinue}
       />
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: {
+  root: {
     flex: 1,
   },
-  content: {
-    paddingTop: 8,
-    gap: 22,
+  scroll: {
+    flex: 1,
+    overflow: "visible",
   },
-  /** Shell already reserves footer height; light trailing space only. */
-  contentPad: {
-    paddingBottom: 16,
+  content: {
+    paddingTop: 4,
+    paddingBottom: OnboardingPersonalizedPlanFloatCtaLayout.scrollBottomPadding,
+    gap: 28,
+    overflow: "visible",
   },
 });

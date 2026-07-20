@@ -34,7 +34,8 @@ class AlarmRingPromptScheduler {
 
   private openIfDue(alarmId: string, prayer: ObligatoryPrayer): void {
     if (!alarmFireRegistry.isDue(alarmId)) return;
-    openAlarmRing(prayer, alarmId);
+    // Companion timer must always drive Continue UI at fire time.
+    openAlarmRing(prayer, alarmId, { force: true });
   }
 }
 

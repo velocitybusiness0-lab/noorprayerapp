@@ -1,8 +1,7 @@
 /**
- * Timing for the rating page: request the native review sheet, then unlock Continue.
- * Mirrors common App Store review prompt UX (prompt first, never trap the user).
+ * Timing for the rating page: unlock Continue after content has settled.
+ * Does not trigger a native Store Review sheet.
  */
 export class OnboardingRatingContinuePolicy {
-  static readonly reviewPromptDelayMs = 1000;
-  static readonly continueUnlockDelayMs = 2500;
+  static readonly continueUnlockDelayMs = 1200;
 }

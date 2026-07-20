@@ -58,7 +58,7 @@ function loadExpoAudio(): ExpoAudioBindings | null {
 class AlarmRingLoopController {
   private audio: ExpoAudioBindings | null | undefined;
   private player: AudioPlayer | null = null;
-  private activeAlarmId: string | null = null;
+  private activeAlarmIdField: string | null = null;
   private starting: Promise<void> | null = null;
 
   private getAudio(): ExpoAudioBindings | null {
@@ -77,7 +77,7 @@ class AlarmRingLoopController {
           console.info(`[AlarmRingLoop] AlarmKit owns audio — no in-app loop for ${alarmId}`);
         }
         await this.disposePlayer();
-        this.activeAlarmId = null;
+        this.activeAlarmIdField = null;
       }
       return;
     }
@@ -88,13 +88,13 @@ class AlarmRingLoopController {
       return;
     }
 
-    if (this.activeAlarmId === alarmId && this.player) {
+    if (this.activeAlarmIdField === alarmId && this.player) {
       if (this.resumePlayer()) return;
     }
 
     if (this.starting) {
       await this.starting;
-      if (this.activeAlarmId === alarmId && this.player && this.resumePlayer()) return;
+      if (this.activeAlarmIdField === alarmId && this.player && this.resumePlayer()) return;
     }
 
     this.starting = this.startLoop(audio, alarmId);
@@ -105,8 +105,13 @@ class AlarmRingLoopController {
     }
   }
 
+  /** Alarm id currently driving the in-app fallback loop, if any. */
+  get activeAlarmId(): string | null {
+    return this.activeAlarmIdField;
+  }
+
   async stop(): Promise<void> {
-    this.activeAlarmId = null;
+    this.activeAlarmIdField = null;
     await this.disposePlayer();
   }
 
@@ -149,12 +154,12 @@ class AlarmRingLoopController {
       player.loop = true;
       player.play();
       this.player = player;
-      this.activeAlarmId = alarmId;
+      this.activeAlarmIdField = alarmId;
       if (__DEV__) console.info(`[AlarmRingLoop] playing in-app fallback for ${alarmId}`);
     } catch (error) {
       if (__DEV__) console.warn("[AlarmRingLoop] start failed", error);
       this.player = null;
-      this.activeAlarmId = null;
+      this.activeAlarmIdField = null;
     }
   }
 }

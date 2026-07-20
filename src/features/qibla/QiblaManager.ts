@@ -1,5 +1,6 @@
 import { Coordinates, Qibla } from "adhan";
 import { GeoCoordinates } from "@/features/prayerTimes/prayerTimes.types";
+import { AngularMath } from "./AngularMath";
 
 /**
  * Pure qibla math. Returns the great-circle bearing (degrees clockwise from
@@ -11,12 +12,13 @@ export class QiblaManager {
   }
 
   /**
-   * Angle (degrees) the qibla marker should sit at, given the device's current
-   * compass heading. Normalised to [0, 360).
+   * Screen-space needle angle: `qiblaBearing - deviceHeading`, normalized to
+   * [0, 360). 0° means the phone top faces the Kaaba.
    */
   relativeAngle(coords: GeoCoordinates, deviceHeading: number): number {
-    const bearing = this.bearing(coords);
-    return (bearing - deviceHeading + 360) % 360;
+    return AngularMath.normalizeDegrees(
+      this.bearing(coords) - deviceHeading
+    );
   }
 }
 

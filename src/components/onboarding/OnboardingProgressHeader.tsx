@@ -8,6 +8,7 @@ import Animated, {
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/core/theme";
 import { haptics } from "@/core/haptics/HapticsManager";
+import { OnboardingStepFadeTiming } from "@/features/onboarding/OnboardingStepFadeTiming";
 
 interface OnboardingProgressHeaderProps {
   progress: number;
@@ -37,11 +38,17 @@ export function OnboardingProgressHeader({
   const barFill = foregroundColor ?? theme.colors.textPrimary;
 
   useEffect(() => {
-    fill.value = withTiming(progress, { duration: 420 });
+    fill.value = withTiming(progress, {
+      duration: OnboardingStepFadeTiming.backgroundMs,
+      easing: OnboardingStepFadeTiming.easing,
+    });
   }, [fill, progress]);
 
   useEffect(() => {
-    headerOpacity.value = withTiming(opacity, { duration: 320 });
+    headerOpacity.value = withTiming(opacity, {
+      duration: OnboardingStepFadeTiming.fadeInMs,
+      easing: OnboardingStepFadeTiming.easing,
+    });
   }, [headerOpacity, opacity]);
 
   const fillStyle = useAnimatedStyle(() => ({

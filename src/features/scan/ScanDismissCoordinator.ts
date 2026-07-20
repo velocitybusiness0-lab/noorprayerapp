@@ -3,7 +3,6 @@ import { haptics } from "@/core/haptics/HapticsManager";
 import { clearAlarmRingNavigationGuard } from "@/features/alarm/alarmRouter";
 import { activeAlarmController } from "@/features/alarm/ActiveAlarmController";
 import { useHistory } from "@/features/history/historyStore";
-import { usePreDisarm } from "@/features/masjidMode/preDisarmStore";
 import { ObligatoryPrayer } from "@/features/prayerTimes/prayerTimes.types";
 import { scanSessionGuard } from "./ScanSessionGuard";
 import { ScanPurpose } from "./scanTargets";
@@ -21,9 +20,6 @@ export class ScanDismissCoordinator {
     clearAlarmRingNavigationGuard();
 
     try {
-      if (prayerSlot && purpose === "predisarm") {
-        usePreDisarm.getState().preDisarm(prayerSlot);
-      }
       if (prayerSlot && purpose === "disarm") {
         await useHistory.getState().logPrayed(prayerSlot, "scan");
       }

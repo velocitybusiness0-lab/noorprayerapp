@@ -52,7 +52,7 @@ export class InAppAlarmScheduler {
     alarmFireRegistry.register(alarmId, fireAt);
     alarmRegistry.register(alarmId, prayer);
     this.deadlines.schedule(alarmId, fireAt.getTime(), () => {
-      openAlarmRing(prayer, alarmId);
+      openAlarmRing(prayer, alarmId, { force: true });
     });
   }
 

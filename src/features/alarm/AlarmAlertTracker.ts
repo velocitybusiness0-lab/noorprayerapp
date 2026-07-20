@@ -14,6 +14,10 @@ class AlarmAlertTracker {
     return this.alerting.size > 0;
   }
 
+  alertingIds(): string[] {
+    return [...this.alerting];
+  }
+
   clear(alarmId: string): void {
     this.alerting.delete(alarmId);
   }

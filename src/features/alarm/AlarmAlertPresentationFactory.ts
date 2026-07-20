@@ -4,19 +4,22 @@ const WHITE = "#FFFFFF";
 
 /**
  * Builds AlarmKit alert button presentation for prayer alarms.
- * Stop + object hunt both open Miraj via native LiveActivityIntent wiring.
+ * Primary stop (“Open” / swipe) and secondary (“Continue”) both run
+ * MirajOpenAlarmIntent → `/alarm/ring`. Object hunt starts only after the
+ * in-app Continue button.
  */
 export class AlarmAlertPresentationFactory {
   build(title: string): AlertPresentation {
     return {
       title,
-      stopButton: this.stopButton(),
-      secondaryButton: this.objectHuntButton(),
+      stopButton: this.openButton(),
+      secondaryButton: this.continueButton(),
       secondaryButtonBehavior: "custom",
     };
   }
 
-  private stopButton(): AlarmButton {
+  /** Lock-screen primary swipe / stop control — opens Continue gate. */
+  private openButton(): AlarmButton {
     return {
       text: "Open",
       textColor: WHITE,
@@ -24,11 +27,12 @@ export class AlarmAlertPresentationFactory {
     };
   }
 
-  private objectHuntButton(): AlarmButton {
+  /** Secondary lock-screen button — same Continue-gate handoff. */
+  private continueButton(): AlarmButton {
     return {
-      text: "Object hunt",
+      text: "Continue",
       textColor: WHITE,
-      systemImageName: "camera.viewfinder",
+      systemImageName: "arrow.right.circle",
     };
   }
 }

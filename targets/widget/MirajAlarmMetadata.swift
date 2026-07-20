@@ -1,6 +1,7 @@
 import AlarmKit
 
 /// Custom AlarmKit metadata passed from JS (`AlarmConfigurationBuilder`).
+/// Keep in sync with `plugins/alarmkit/MirajAlarmMetadata.swift`.
 struct MirajAlarmMetadata: AlarmMetadata, Codable {
     var slot: String?
     var symbol: String?

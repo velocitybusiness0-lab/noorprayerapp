@@ -1,5 +1,5 @@
 /** What a scan is trying to accomplish. */
-export type ScanPurpose = "disarm" | "predisarm";
+export type ScanPurpose = "disarm";
 
 export interface ScanTarget {
   id: string;
@@ -15,7 +15,7 @@ export interface ScanTarget {
 }
 
 /**
- * Scan targets tied to getting up for salah: wudhu area or masjid (predisarm).
+ * Scan targets for object hunt (sink / bath / toilet) and optional prayer mat.
  * COCO + Vision keyword maps live in DetectorKeywordMaps.ts.
  */
 export const SCAN_TARGETS: Record<string, ScanTarget> = {
@@ -47,13 +47,6 @@ export const SCAN_TARGETS: Record<string, ScanTarget> = {
     customLabels: ["prayer mat", "prayer_mat", "prayer rug", "musalla", "sajjadah"],
     icon: "grid-outline",
   },
-  mosque: {
-    id: "mosque",
-    label: "Mosque",
-    instruction: "Point the camera at the mosque",
-    customLabels: ["mosque", "masjid", "minaret", "mihrab", "dome"],
-    icon: "business-outline",
-  },
 };
 
 const HOME_OBJECT_HUNT_IDS = ["sink", "bath", "toilet"] as const;
@@ -72,14 +65,8 @@ export function usesObjectHunt(purpose: string): boolean {
 }
 
 /** Targets accepted for each purpose (any one satisfies the scan). */
-export function targetsForPurpose(purpose: ScanPurpose): ScanTarget[] {
-  switch (purpose) {
-    case "predisarm":
-      return [SCAN_TARGETS.mosque, SCAN_TARGETS.sink, SCAN_TARGETS.bath];
-    case "disarm":
-    default:
-      return objectHuntTargets();
-  }
+export function targetsForPurpose(_purpose: ScanPurpose): ScanTarget[] {
+  return objectHuntTargets();
 }
 
 export const DETECTION_THRESHOLD = 0.45;

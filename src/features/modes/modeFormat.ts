@@ -8,7 +8,7 @@ export function formatEnabledModesSummary(modes: SalahMode[]): string {
   return ordered.map((mode) => SALAH_MODE_LABELS[mode]).join(" + ");
 }
 
-/** True when alarm is active (needs scan / pre-disarm flows). */
+/** True when alarm is active (needs scan-to-disarm flow). */
 export function hasActiveSalahAction(modes: SalahMode[]): boolean {
   return modes.includes("alarm");
 }

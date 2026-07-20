@@ -2,13 +2,15 @@ import { useEffect } from "react";
 import { AppState, Platform } from "react-native";
 import { isExpoGo } from "@/core/runtime/isExpoGo";
 import { alarmManager } from "./AlarmManager";
-import { alarmRegistry } from "./AlarmRegistry";
 import { alarmAlertTracker } from "./AlarmAlertTracker";
 import { alarmFireRegistry } from "./AlarmFireRegistry";
 import { alarmSessionCoordinator } from "./AlarmSessionCoordinator";
 import { clearAlarmRingNavigationGuard, openAlarmRing } from "./alarmRouter";
 import { alarmKitOwnershipRegistry } from "./AlarmKitOwnershipRegistry";
 import { alarmKitContinuityController } from "./AlarmKitContinuityController";
+import { alarmObjectHuntLaunchResolver } from "./AlarmObjectHuntLaunchResolver";
+import { alarmRingPresentationGate } from "./AlarmRingPresentationGate";
+import { alarmRingPresentationRecovery } from "./AlarmRingPresentationRecovery";
 
 type AlarmKitAlarm = { id: string; state: string };
 
@@ -36,7 +38,7 @@ function syncAlertingState(alarms: AlarmKitAlarm[]): void {
   }
 }
 
-function openRingForNewlyAlertingAlarms(
+function openRingForAlertingAlarms(
   alarms: AlarmKitAlarm[],
   seen: Set<string>
 ): void {
@@ -45,32 +47,42 @@ function openRingForNewlyAlertingAlarms(
       seen.delete(alarm.id);
       continue;
     }
-    if (seen.has(alarm.id)) continue;
 
-    const slot = alarmRegistry.slotFor(alarm.id);
-    if (!slot) continue;
+    const slot = alarmObjectHuntLaunchResolver.resolveSlot(alarm.id) ?? "fajr";
     if (!mayOpenRing(alarm.id) && !alarmAlertTracker.isAlerting(alarm.id)) continue;
 
+    const alreadyPresented = alarmRingPresentationGate.isPresented(alarm.id);
+    if (seen.has(alarm.id) && alreadyPresented) continue;
+
     seen.add(alarm.id);
-    openAlarmRing(slot, alarm.id);
+    openAlarmRing(slot, alarm.id, { force: !alreadyPresented });
   }
 }
 
 function resumeAlertingRingIfNeeded(alarms: AlarmKitAlarm[]): void {
+  alarmRingPresentationRecovery.recover(alarms);
+
   for (const alarm of alarms) {
     if (alarm.state !== "alerting") continue;
-    const slot = alarmRegistry.slotFor(alarm.id);
-    if (!slot) continue;
+    const slot = alarmObjectHuntLaunchResolver.resolveSlot(alarm.id) ?? "fajr";
     clearAlarmRingNavigationGuard();
-    openAlarmRing(slot, alarm.id);
+    openAlarmRing(slot, alarm.id, { force: true });
+    return;
+  }
+
+  const activeId = alarmSessionCoordinator.currentAlarmId;
+  if (activeId && alarmSessionCoordinator.blocksScheduling()) {
+    const slot = alarmObjectHuntLaunchResolver.resolveSlot(activeId) ?? "fajr";
+    clearAlarmRingNavigationGuard();
+    openAlarmRing(slot, activeId, { force: true });
     return;
   }
 
   alarmFireRegistry.forEachDue((alarmId) => {
-    const slot = alarmRegistry.slotFor(alarmId);
+    const slot = alarmObjectHuntLaunchResolver.resolveSlot(alarmId);
     if (!slot) return;
     clearAlarmRingNavigationGuard();
-    openAlarmRing(slot, alarmId);
+    openAlarmRing(slot, alarmId, { force: true });
   });
 }
 
@@ -79,8 +91,11 @@ function handleAlarmUpdates(
   alerting: Set<string>
 ): void {
   syncAlertingState(alarms);
-  openRingForNewlyAlertingAlarms(alarms, alerting);
+  openRingForAlertingAlarms(alarms, alerting);
   alarmKitContinuityController.handleNativeUpdates(alarms);
+  if (AppState.currentState === "active") {
+    alarmRingPresentationRecovery.recover(alarms);
+  }
 }
 
 async function refreshNativeAlarms(
@@ -99,8 +114,8 @@ async function refreshNativeAlarms(
 }
 
 /**
- * Opens the ring screen when AlarmKit alerts at prayer time, including after
- * returning to the foreground if the alarm is still ringing.
+ * Opens the continue / ring gate when AlarmKit alerts at prayer time, including
+ * after returning to the foreground if the alarm is still ringing.
  */
 export function useAlarmKitListener(): void {
   useEffect(() => {

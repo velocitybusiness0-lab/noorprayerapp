@@ -34,7 +34,6 @@ interface ScanSession {
   acceptedTargets: ScanTarget[];
   changeMissionTarget: (target: ScanTarget) => void;
   needsDevBuild: boolean;
-  confirmManual: () => void;
   onLiveDetections: (event: { nativeEvent: LiveScanDetectionsEvent }) => void;
 }
 
@@ -199,11 +198,6 @@ export function useScanSession({
     [alarmId, evaluator, missionTarget, purpose]
   );
 
-  const confirmManual = useCallback(() => {
-    if (succeededRef.current) return;
-    succeed(null);
-  }, [succeed]);
-
   return {
     cameraRef,
     active,
@@ -217,7 +211,6 @@ export function useScanSession({
     acceptedTargets: manager.acceptedTargets,
     changeMissionTarget,
     needsDevBuild,
-    confirmManual,
     onLiveDetections,
   };
 }

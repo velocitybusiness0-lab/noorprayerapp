@@ -1,26 +1,36 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as Location from "expo-location";
 import { locationManager } from "@/features/location/LocationManager";
 import { GeoCoordinates } from "@/features/prayerTimes/prayerTimes.types";
+import { qiblaDeviceHeadingResolver } from "./QiblaDeviceHeadingResolver";
 import { qiblaManager } from "./QiblaManager";
+import { QiblaHeadingSmoother } from "./QiblaHeadingSmoother";
 
 interface QiblaState {
   loading: boolean;
   error: string | null;
-  /** Compass heading of the device (degrees from true north). */
+  /** Smoothed compass heading of the device (degrees from north). */
   heading: number;
-  /** Absolute qibla bearing from the user's location. */
+  /** Absolute qibla bearing from the user's location (true north). */
   qiblaBearing: number;
   /** Angle to render the qibla marker relative to the device top. */
   relativeAngle: number;
   /** True when the marker points (roughly) straight up = facing qibla. */
   aligned: boolean;
   accuracy: number | null;
+  /** True when the OS reports poor / invalid heading accuracy. */
+  needsCalibration: boolean;
 }
 
 /**
  * View-model hook: resolves location, computes qibla bearing, and streams the
- * live compass heading via the OS heading API (uses the magnetometer + GPS).
+ * live compass heading via `Location.watchHeadingAsync` (true north when
+ * available, else magnetic). Display heading is lightly smoothed; bearing math
+ * stays exact.
+ *
+ * Display model (one source of truth):
+ * - dial rotation = -heading (cardinals stay world-aligned)
+ * - needle rotation = qiblaBearing - heading (up when facing Kaaba)
  */
 export function useQibla(): QiblaState {
   const [coords, setCoords] = useState<GeoCoordinates | null>(
@@ -30,10 +40,13 @@ export function useQibla(): QiblaState {
   const [accuracy, setAccuracy] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const headingSmootherRef = useRef(new QiblaHeadingSmoother());
 
   useEffect(() => {
     let subscription: Location.LocationSubscription | null = null;
     let cancelled = false;
+    const headingSmoother = headingSmootherRef.current;
+    headingSmoother.reset();
 
     (async () => {
       try {
@@ -41,7 +54,8 @@ export function useQibla(): QiblaState {
         if (cancelled) return;
         setCoords(resolved);
         subscription = await Location.watchHeadingAsync((data) => {
-          setHeading(data.trueHeading >= 0 ? data.trueHeading : data.magHeading);
+          const raw = qiblaDeviceHeadingResolver.resolve(data);
+          setHeading(headingSmoother.push(raw));
           setAccuracy(data.accuracy ?? null);
         });
       } catch (e) {
@@ -56,6 +70,7 @@ export function useQibla(): QiblaState {
     return () => {
       cancelled = true;
       subscription?.remove();
+      headingSmoother.reset();
     };
   }, []);
 
@@ -69,6 +84,8 @@ export function useQibla(): QiblaState {
   );
 
   const aligned = relativeAngle < 5 || relativeAngle > 355;
+  const needsCalibration =
+    qiblaDeviceHeadingResolver.needsCalibration(accuracy);
 
   return {
     loading,
@@ -78,5 +95,6 @@ export function useQibla(): QiblaState {
     relativeAngle,
     aligned,
     accuracy,
+    needsCalibration,
   };
 }

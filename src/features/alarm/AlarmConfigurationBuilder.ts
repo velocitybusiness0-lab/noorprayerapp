@@ -15,7 +15,8 @@ const WHITE = "#FFFFFF";
 /**
  * Builds AlarmKit configs for prayer alarms.
  * Alert-only (no snooze/X cancel) — sound stops only after object hunt.
- * Stop + secondary both open Miraj via native LiveActivityIntent.
+ * Open (stop) + secondary both launch Miraj into the Continue gate via
+ * MirajOpenAlarmIntent (`openAppWhenRun`).
  */
 export class AlarmConfigurationBuilder {
   build(
@@ -27,7 +28,7 @@ export class AlarmConfigurationBuilder {
     return this.buildAlertOnly(date, alarmKitId, logicalId, options);
   }
 
-  /** Prayer alarms: stop + object hunt open Miraj; no snooze countdown cancel (X). */
+  /** Prayer alarms: stop + secondary open Miraj to Continue; no snooze cancel (X). */
   buildAlertOnly(
     date: Date,
     alarmKitId: string,

@@ -13,4 +13,8 @@ export class AppLinks {
   static readonly feedbackEmail = "feedback@miraj.app";
 
   static readonly feedbackSubject = "Miraj app feedback";
+
+  static readonly termsUrl = "https://miraj.app/terms";
+
+  static readonly privacyUrl = "https://miraj.app/privacy";
 }

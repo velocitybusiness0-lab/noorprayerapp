@@ -90,7 +90,7 @@ export function DailyGoalsSection() {
 }
 
 const styles = StyleSheet.create({
-  card: { marginTop: 16 },
+  card: { marginTop: 12 },
   header: {
     flexDirection: "row",
     alignItems: "center",

@@ -16,7 +16,7 @@ import { useAlarmRingAudio } from "@/features/alarm/useAlarmRingAudio";
 import { useHideTabBar } from "@/features/navigation/useHideTabBar";
 import { ObligatoryPrayer, PrayerSlot } from "@/features/prayerTimes/prayerTimes.types";
 
-const VALID_PURPOSES: ScanPurpose[] = ["disarm", "predisarm"];
+const VALID_PURPOSES: ScanPurpose[] = ["disarm"];
 
 function firstParam(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
@@ -89,7 +89,6 @@ export default function ScanScreen() {
         streakProgress={session.streakProgress}
         succeeded={session.succeeded}
         onChangeMissionTarget={session.changeMissionTarget}
-        onManualConfirm={session.confirmManual}
       />
       </View>
     </>

@@ -4,6 +4,8 @@ interface LiveActivityNativeModule {
   isSupported: () => boolean;
   setSnapshot: (json: string) => void;
   reloadWidgets: () => void;
+  /** Consumes AlarmKit lock-screen → Continue-gate handoff from the app group. */
+  consumePendingObjectHuntAlarmId?: () => string | null;
   start: (
     title: string,
     prayerName: string,

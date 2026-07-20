@@ -1,3 +1,5 @@
+import { ImageSourcePropType } from "react-native";
+
 export interface OnboardingRatingReview {
   id: string;
   name: string;
@@ -5,11 +7,12 @@ export interface OnboardingRatingReview {
   rating: number;
   review: string;
   initials: string;
+  avatarSource: ImageSourcePropType;
 }
 
 /** Social-proof reviews shown on the onboarding rating page. */
 export class OnboardingRatingCatalog {
-  static readonly socialProofCopy = "Loved by Muslims rebuilding their salah";
+  static readonly socialProofCopy = "Loved by Muslims rebuilding consistent salah";
 
   static readonly reviews: OnboardingRatingReview[] = [
     {
@@ -18,8 +21,9 @@ export class OnboardingRatingCatalog {
       handle: "@amina.k",
       rating: 5,
       review:
-        "The wake receipts finally got me up for Fajr. I have not missed a morning prayer in weeks.",
+        "The prayer alarm with object hunt finally gets me out of bed for Fajr. I have not missed a morning prayer in weeks.",
       initials: "AK",
+      avatarSource: require("../../../../assets/onboarding/avatars/amina.png"),
     },
     {
       id: "yusuf",
@@ -27,17 +31,19 @@ export class OnboardingRatingCatalog {
       handle: "@yusuf.r",
       rating: 5,
       review:
-        "Simple, calm, and actually keeps me consistent. My streak is the longest it has ever been.",
+        "Confirming namaz after I pray keeps me honest, and my streak is the longest it has ever been.",
       initials: "YR",
+      avatarSource: require("../../../../assets/onboarding/avatars/yusuf.png"),
     },
     {
-      id: "anonymous",
-      name: "Anonymous",
-      handle: "",
+      id: "sara",
+      name: "Sara M",
+      handle: "@sara.m",
       rating: 5,
       review:
-        "I used to skip Asr when work got busy. Gentle reminders and a clear plan changed that.",
-      initials: "A",
+        "Accurate prayer times and the Qibla finder mean I never guess the direction. The duas library is a blessing too.",
+      initials: "SM",
+      avatarSource: require("../../../../assets/onboarding/avatars/sara.png"),
     },
   ];
 }

@@ -74,8 +74,8 @@ export class DuaLibraryPresenter {
     return ordered.slice(0, count);
   }
 
-  static filterSaved(query: string): DuaEntry[] {
-    const entries = DuaLibraryManager.savedEntries();
+  static filterSaved(query: string, savedIds: string[]): DuaEntry[] {
+    const entries = DuaLibraryManager.entriesForIds(savedIds);
     const needle = query.trim().toLowerCase();
     if (!needle) return entries;
     return entries.filter((dua) => this.matchesQuery(dua, needle));

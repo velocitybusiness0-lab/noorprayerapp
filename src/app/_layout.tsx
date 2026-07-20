@@ -7,7 +7,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 /* eslint-enable import/no-duplicates */
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import * as SplashScreen from "expo-splash-screen";
-import { ThemeProvider, useTheme } from "@/core/theme";
+import { lightTheme, ThemeProvider, useTheme } from "@/core/theme";
 import { AppBootstrap } from "@/features/bootstrap/AppBootstrap";
 import { RootErrorBoundary } from "@/features/bootstrap/RootErrorBoundary";
 
@@ -44,10 +44,15 @@ function RootNavigator() {
             presentation: "fullScreenModal",
             animation: "fade",
             gestureEnabled: false,
+            contentStyle: { backgroundColor: lightTheme.colors.background },
           }}
         />
         <Stack.Screen
           name="alarm/ring"
+          options={{ presentation: "fullScreenModal", gestureEnabled: false }}
+        />
+        <Stack.Screen
+          name="alarm/object-hunt"
           options={{ presentation: "fullScreenModal", gestureEnabled: false }}
         />
         <Stack.Screen

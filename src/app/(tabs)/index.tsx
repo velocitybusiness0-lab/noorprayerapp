@@ -11,6 +11,8 @@ import { ThemedText } from "@/components/primitives/ThemedText";
 import { Button } from "@/components/primitives/Button";
 import { Card } from "@/components/primitives/Card";
 import { HomeHeader } from "@/components/home/HomeHeader";
+import { HomeSectionDivider } from "@/components/home/HomeSectionDivider";
+import { HomeTimetableConfirmHint } from "@/components/home/HomeTimetableConfirmHint";
 import { NextPrayerArcCard } from "@/components/home/NextPrayerArcCard";
 import { PrayerList } from "@/components/prayer/PrayerList";
 import { DailyGoalsSection } from "@/components/today/DailyGoalsSection";
@@ -128,8 +130,11 @@ export default function TodayScreen() {
               onPressPrayer={onPressPrayer}
             />
           </Card>
+          <HomeTimetableConfirmHint />
 
+          <HomeSectionDivider />
           <DailyGoalsSection />
+          <HomeSectionDivider />
 
           <HomeMyDuasCard />
           <HomeMotivationCard />

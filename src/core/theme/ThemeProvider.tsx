@@ -22,6 +22,12 @@ function readInitialMode(): ThemeMode {
   return (storage.getString(StorageKeys.themeMode) as ThemeMode) ?? "light";
 }
 
+function useThemeContext(): ThemeContextValue {
+  const ctx = useContext(ThemeContext);
+  if (!ctx) throw new Error("useTheme must be used within ThemeProvider");
+  return ctx;
+}
+
 /**
  * Provides the resolved `Theme` to the whole app and persists the user's
  * chosen mode. Defaults to light (peaceful pastels). "system" follows the OS.
@@ -45,14 +51,35 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
+/**
+ * Nested override so a subtree always resolves light or dark colors without
+ * changing the persisted app-wide theme preference.
+ */
+export function ForcedSchemeThemeProvider({
+  scheme,
+  children,
+}: {
+  scheme: "light" | "dark";
+  children: React.ReactNode;
+}) {
+  const parent = useThemeContext();
+  const value = useMemo<ThemeContextValue>(
+    () => ({
+      theme: themeForScheme(scheme === "dark"),
+      mode: parent.mode,
+      setMode: parent.setMode,
+    }),
+    [scheme, parent.mode, parent.setMode]
+  );
+
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+}
+
 export function useTheme(): Theme {
-  const ctx = useContext(ThemeContext);
-  if (!ctx) throw new Error("useTheme must be used within ThemeProvider");
-  return ctx.theme;
+  return useThemeContext().theme;
 }
 
 export function useThemeMode(): { mode: ThemeMode; setMode: (m: ThemeMode) => void } {
-  const ctx = useContext(ThemeContext);
-  if (!ctx) throw new Error("useThemeMode must be used within ThemeProvider");
+  const ctx = useThemeContext();
   return { mode: ctx.mode, setMode: ctx.setMode };
 }

@@ -95,7 +95,7 @@ export function ObjectHuntTargetPill({ label, onPress }: ObjectHuntTargetPillPro
       style={styles.pill}
     >
       <Ionicons name="options-outline" size={16} color="#FFFFFF" />
-      <ThemedText variant="caption" style={styles.pillText}>
+      <ThemedText variant="caption" style={styles.pillText} numberOfLines={1}>
         {`Object: ${label}`}
       </ThemedText>
       <Ionicons name="chevron-down" size={14} color="rgba(255,255,255,0.7)" />
@@ -123,6 +123,7 @@ const styles = StyleSheet.create({
   done: { marginTop: 8 },
   pill: {
     alignSelf: "center",
+    maxWidth: "90%",
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
@@ -133,5 +134,5 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.28)",
     backgroundColor: "rgba(0,0,0,0.35)",
   },
-  pillText: { color: "rgba(255,255,255,0.9)" },
+  pillText: { color: "rgba(255,255,255,0.9)", flexShrink: 1 },
 });

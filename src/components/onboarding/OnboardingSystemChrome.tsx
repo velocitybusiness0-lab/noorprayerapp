@@ -26,8 +26,7 @@ function loadNavigationBar(): NavigationBarModule | null {
 export function OnboardingSystemChrome({ pastel }: OnboardingSystemChromeProps) {
   const theme = useTheme();
   const colors = OnboardingPastelPalette.forTone(pastel, theme.isDark);
-  const onDark =
-    pastel === "hardRed" || pastel === "deepBlue" || pastel === "hope";
+  const onDark = OnboardingPastelPalette.isDarkTone(pastel);
 
   useEffect(() => {
     if (Platform.OS !== "android") return;

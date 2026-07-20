@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { StyleSheet, View } from "react-native";
 import Svg, { Circle, Line, Text as SvgText } from "react-native-svg";
 import Animated, {
@@ -9,6 +9,7 @@ import Animated, {
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/core/theme";
 import { ThemedText } from "@/components/primitives/ThemedText";
+import { ContinuousAngleTracker } from "@/features/qibla/ContinuousAngleTracker";
 
 interface QiblaCompassProps {
   heading: number;
@@ -24,9 +25,15 @@ const CARDINALS = [
   { label: "W", angle: 270 },
 ];
 
+/** Short ease only — ContinuousAngleTracker already prevents 0° teleports. */
+const ROTATION_MS = 40;
+
 /**
- * Circular compass: a rotating cardinal dial plus a qibla needle. The needle
- * points up when the device faces the Kaaba.
+ * Circular compass with one rotation model (do not mix alternatives):
+ * - Dial rotates by `-heading` so N/E/S/W stay world-aligned under the phone.
+ * - Needle rotates by `relativeAngle` (= qiblaBearing − heading) so it points
+ *   at the Kaaba; 0° = phone top faces qibla.
+ * Both layers share the same heading, so they never double-count rotation.
  */
 export function QiblaCompass({
   heading,
@@ -37,13 +44,19 @@ export function QiblaCompass({
   const theme = useTheme();
   const dial = useSharedValue(0);
   const needle = useSharedValue(0);
+  const dialTracker = useRef(new ContinuousAngleTracker());
+  const needleTracker = useRef(new ContinuousAngleTracker());
 
   useEffect(() => {
-    dial.value = withTiming(-heading, { duration: 120 });
+    dial.value = withTiming(dialTracker.current.next(-heading), {
+      duration: ROTATION_MS,
+    });
   }, [heading, dial]);
 
   useEffect(() => {
-    needle.value = withTiming(relativeAngle, { duration: 120 });
+    needle.value = withTiming(needleTracker.current.next(relativeAngle), {
+      duration: ROTATION_MS,
+    });
   }, [relativeAngle, needle]);
 
   const dialStyle = useAnimatedStyle(() => ({

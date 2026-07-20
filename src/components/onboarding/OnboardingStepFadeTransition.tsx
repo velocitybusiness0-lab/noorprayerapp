@@ -1,7 +1,6 @@
 import React, { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { StyleSheet, useWindowDimensions, View } from "react-native";
 import Animated, {
-  Easing,
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
@@ -157,7 +156,7 @@ export function OnboardingStepFadeTransition({
       0,
       {
         duration: OnboardingStepFadeTiming.fadeOutMs,
-        easing: Easing.in(Easing.cubic),
+        easing: OnboardingStepFadeTiming.easing,
       },
       (finished) => {
         if (!finished) return;
@@ -192,7 +191,11 @@ export function OnboardingStepFadeTransition({
 
   return (
     <Animated.View
-      style={[styles.fill, animatedStyle]}
+      style={[
+        styles.fill,
+        mode === "slide" && styles.clip,
+        animatedStyle,
+      ]}
       pointerEvents={busy ? "none" : "box-none"}
     >
       <View style={styles.fill}>
@@ -205,5 +208,8 @@ export function OnboardingStepFadeTransition({
 const styles = StyleSheet.create({
   fill: {
     flex: 1,
+  },
+  clip: {
+    overflow: "hidden",
   },
 });

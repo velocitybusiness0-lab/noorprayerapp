@@ -1,4 +1,11 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
 import {
   FlatList,
   NativeScrollEvent,
@@ -7,6 +14,7 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { ImpactFeedbackStyle } from "expo-haptics";
 import { ThemedText } from "@/components/primitives/ThemedText";
 import { OnboardingPageDotIndicator } from "@/components/onboarding/OnboardingPageDotIndicator";
 import {
@@ -15,9 +23,15 @@ import {
 } from "@/features/onboarding/OnboardingPastelPalette";
 import { OnboardingSlideshowController } from "@/features/onboarding/OnboardingSlideshowController";
 import { OnboardingSlideshowPagerScroller } from "@/features/onboarding/OnboardingSlideshowPagerScroller";
+import { haptics } from "@/core/haptics/HapticsManager";
 import { useTheme } from "@/core/theme";
 import { OnboardingStep, OnboardingSlide } from "@/features/onboarding/onboarding.types";
 import { OnboardingSlideGraphic } from "./OnboardingSlideGraphic";
+
+export interface OnboardingSlideshowStepHandle {
+  /** Scrolls to the next slide; returns false when already on the last slide. */
+  scrollToNext: () => boolean;
+}
 
 interface OnboardingSlideshowStepProps {
   step: OnboardingStep;
@@ -27,20 +41,24 @@ interface OnboardingSlideshowStepProps {
 
 /**
  * Horizontal swipe pager for urgency / Miraj welcome slides.
- * Progress / Continue chrome stay in the shell; only slide pages move.
+ * Shell pastel syncs from scroll events so red→blue never flashes early.
  */
-export function OnboardingSlideshowStep({
-  step,
-  activeSlideIndex,
-  onActiveSlideChange,
-}: OnboardingSlideshowStepProps) {
+export const OnboardingSlideshowStep = forwardRef<
+  OnboardingSlideshowStepHandle,
+  OnboardingSlideshowStepProps
+>(function OnboardingSlideshowStep(
+  { step, activeSlideIndex, onActiveSlideChange },
+  ref
+) {
   const slides = step.slides ?? [];
   const centerContent = step.contentPlacement === "center";
+  const brandAtTop = Boolean(step.brandLabel);
   const listRef = useRef<FlatList<OnboardingSlide>>(null);
   const reportedIndexRef = useRef(
     OnboardingSlideshowController.clampIndex(activeSlideIndex, slides.length)
   );
   const layoutReadyRef = useRef(false);
+  const pageWidthRef = useRef(0);
   const [pageWidth, setPageWidth] = useState(0);
   const [pageHeight, setPageHeight] = useState(0);
   const safeIndex = OnboardingSlideshowController.clampIndex(
@@ -53,13 +71,14 @@ export function OnboardingSlideshowStep({
     step.pastel ?? "hardRed"
   );
   const darkDots = OnboardingPastelPalette.isDarkTone(activePastel);
+  const dotColor = darkDots ? "#FFFFFF" : ONBOARDING_INK;
 
   useEffect(() => {
     reportedIndexRef.current = OnboardingSlideshowController.clampIndex(
       activeSlideIndex,
       slides.length
     );
-  }, [step.id, slides.length]);
+  }, [activeSlideIndex, slides.length, step.id]);
 
   useEffect(() => {
     if (!layoutReadyRef.current) return;
@@ -78,35 +97,32 @@ export function OnboardingSlideshowStep({
   }, [pageWidth, safeIndex, slides.length]);
 
   const emitIndex = useCallback(
-    (index: number) => {
+    (index: number, fromUserSwipe: boolean) => {
       const next = OnboardingSlideshowController.clampIndex(index, slides.length);
       if (next === reportedIndexRef.current) return;
       reportedIndexRef.current = next;
+      if (fromUserSwipe) {
+        haptics.impact(ImpactFeedbackStyle.Light);
+      }
       onActiveSlideChange?.(next);
     },
     [onActiveSlideChange, slides.length]
   );
 
   const syncIndexFromOffset = useCallback(
-    (offsetX: number) => {
-      if (pageWidth <= 0) return;
+    (offsetX: number, fromUserSwipe: boolean) => {
+      if (pageWidthRef.current <= 0) return;
       emitIndex(
-        OnboardingSlideshowController.indexFromOffset(offsetX, pageWidth)
+        OnboardingSlideshowController.indexFromOffset(offsetX, pageWidthRef.current),
+        fromUserSwipe
       );
     },
-    [emitIndex, pageWidth]
-  );
-
-  const onScroll = useCallback(
-    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      syncIndexFromOffset(event.nativeEvent.contentOffset.x);
-    },
-    [syncIndexFromOffset]
+    [emitIndex]
   );
 
   const onMomentumScrollEnd = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      syncIndexFromOffset(event.nativeEvent.contentOffset.x);
+      syncIndexFromOffset(event.nativeEvent.contentOffset.x, true);
     },
     [syncIndexFromOffset]
   );
@@ -117,19 +133,43 @@ export function OnboardingSlideshowStep({
         listRef.current,
         info.index,
         slides.length,
-        pageWidth,
+        pageWidthRef.current,
         info.averageItemLength
       );
     },
-    [pageWidth, slides.length]
+    [slides.length]
+  );
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      scrollToNext: () => {
+        const count = slides.length;
+        const current = reportedIndexRef.current;
+        const next = OnboardingSlideshowController.nextSlideIndex(current, count);
+        if (next === null) return false;
+        if (!OnboardingSlideshowPagerScroller.canScroll(pageWidthRef.current, count)) {
+          return false;
+        }
+        OnboardingSlideshowPagerScroller.scrollToIndex(
+          listRef.current,
+          next,
+          count,
+          pageWidthRef.current,
+          true
+        );
+        return true;
+      },
+    }),
+    [slides.length]
   );
 
   if (slides.length === 0) return null;
 
   return (
     <View style={styles.wrap}>
-      {step.brandLabel && !centerContent ? (
-        <ThemedText variant="title" style={styles.brand}>
+      {brandAtTop ? (
+        <ThemedText variant="title" style={[styles.brandTop, { color: dotColor }]}>
           {step.brandLabel}
         </ThemedText>
       ) : null}
@@ -138,9 +178,12 @@ export function OnboardingSlideshowStep({
         style={styles.list}
         onLayout={(event) => {
           const { width, height } = event.nativeEvent.layout;
-          if (width > 0 && width !== pageWidth) setPageWidth(width);
+          if (width > 0) {
+            pageWidthRef.current = width;
+            if (width !== pageWidth) setPageWidth(width);
+            layoutReadyRef.current = true;
+          }
           if (height > 0 && height !== pageHeight) setPageHeight(height);
-          if (width > 0) layoutReadyRef.current = true;
         }}
       >
         {pageWidth > 0 ? (
@@ -150,6 +193,7 @@ export function OnboardingSlideshowStep({
             horizontal
             pagingEnabled
             bounces={false}
+            decelerationRate="fast"
             showsHorizontalScrollIndicator={false}
             keyExtractor={(_, index) => `${step.id}-${index}`}
             style={{ width: pageWidth }}
@@ -161,8 +205,6 @@ export function OnboardingSlideshowStep({
               ),
               index,
             })}
-            onScroll={onScroll}
-            scrollEventThrottle={16}
             onMomentumScrollEnd={onMomentumScrollEnd}
             onScrollToIndexFailed={onScrollToIndexFailed}
             initialScrollIndex={safeIndex > 0 ? safeIndex : undefined}
@@ -173,7 +215,6 @@ export function OnboardingSlideshowStep({
                 width={pageWidth}
                 height={pageHeight}
                 centerContent={centerContent}
-                brandLabel={centerContent ? step.brandLabel : undefined}
               />
             )}
           />
@@ -184,31 +225,22 @@ export function OnboardingSlideshowStep({
         <OnboardingPageDotIndicator
           count={slides.length}
           activeIndex={safeIndex}
-          activeColor={darkDots ? "#FFFFFF" : ONBOARDING_INK}
-          inactiveColor={
-            darkDots ? "rgba(255,255,255,0.35)" : "rgba(61,56,50,0.22)"
-          }
+          activeColor={dotColor}
+          inactiveColor={darkDots ? "rgba(255,255,255,0.35)" : "rgba(61,56,50,0.22)"}
         />
       </View>
     </View>
   );
-}
+});
 
 interface SlidePageProps {
   slide: OnboardingSlide;
   width: number;
   height: number;
   centerContent: boolean;
-  brandLabel?: string;
 }
 
-function SlidePage({
-  slide,
-  width,
-  height,
-  centerContent,
-  brandLabel,
-}: SlidePageProps) {
+function SlidePage({ slide, width, height, centerContent }: SlidePageProps) {
   const theme = useTheme();
   const pastel = OnboardingPastelPalette.forTone(slide.pastel ?? "default", theme.isDark);
   const textColor = pastel.text;
@@ -236,23 +268,7 @@ function SlidePage({
       ]}
     >
       {!centerContent ? <View style={styles.upperSpacer} /> : null}
-
-      {centerContent ? visual : null}
-
-      {brandLabel ? (
-        <ThemedText
-          variant="title"
-          style={[
-            styles.brandInline,
-            centerContent && styles.brandInlineCentered,
-            { color: textColor },
-          ]}
-        >
-          {brandLabel}
-        </ThemedText>
-      ) : null}
-
-      {!centerContent ? visual : null}
+      {visual}
 
       <View style={[styles.textBlock, centerContent && styles.textBlockCentered]}>
         {slide.title ? (
@@ -302,24 +318,13 @@ const styles = StyleSheet.create({
     flex: 1,
     marginHorizontal: -20,
   },
-  brand: {
-    color: ONBOARDING_INK,
+  brandTop: {
     textAlign: "center",
-    marginTop: 8,
-    marginBottom: 4,
+    marginTop: 4,
+    marginBottom: 8,
     letterSpacing: 0.4,
-  },
-  brandInline: {
-    textAlign: "center",
-    marginBottom: 12,
-    letterSpacing: 0.4,
-  },
-  brandInlineCentered: {
     fontSize: 22,
     lineHeight: 28,
-    marginTop: 4,
-    marginBottom: 10,
-    letterSpacing: 0.2,
   },
   list: {
     flex: 1,
@@ -332,10 +337,10 @@ const styles = StyleSheet.create({
   pageCentered: {
     justifyContent: "center",
     paddingHorizontal: 36,
-    paddingBottom: 28,
+    paddingBottom: 20,
   },
   upperSpacer: {
-    height: 36,
+    height: 28,
   },
   iconWrap: {
     marginBottom: 20,
@@ -344,7 +349,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   graphicWrapCentered: {
-    marginBottom: 20,
+    marginBottom: 18,
   },
   textBlock: {
     alignItems: "center",
@@ -352,7 +357,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   textBlockCentered: {
-    marginTop: 0,
+    marginTop: 4,
   },
   title: {
     textAlign: "center",
@@ -381,7 +386,7 @@ const styles = StyleSheet.create({
   },
   dotSpacer: {
     flex: 1,
-    minHeight: 16,
+    minHeight: 12,
   },
   dotsWrap: {
     marginBottom: 8,

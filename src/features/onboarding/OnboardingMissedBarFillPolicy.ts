@@ -3,7 +3,7 @@
  * Softened scale so day/week stay readable next to the year total.
  */
 export class OnboardingMissedBarFillPolicy {
-  static readonly trackHeight = 148;
+  static readonly trackHeight = 96;
   private static readonly minVisibleRatio = 0.1;
   private static readonly softenExponent = 0.42;
 

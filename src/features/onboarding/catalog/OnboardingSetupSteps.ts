@@ -23,6 +23,7 @@ export const ONBOARDING_SETUP_STEPS: OnboardingStep[] = [
     options: [
       { id: "cant-explain", label: "I can't explain how much" },
       { id: "more-than-ever", label: "More than ever" },
+      { id: "ready", label: "I'm ready to change" },
     ],
   },
   {
@@ -64,7 +65,7 @@ export const ONBOARDING_SETUP_STEPS: OnboardingStep[] = [
   {
     id: "bad-news",
     type: "downtrend",
-    title: "A few habits may be holding you back",
+    title: "A few habits are holding you back",
     bullets: [
       "Inconsistent prayer habits",
       "Lack of structure",
@@ -140,20 +141,6 @@ export const ONBOARDING_SETUP_STEPS: OnboardingStep[] = [
     pastel: "white",
   },
   {
-    id: "choose-goals",
-    type: "multi-choice",
-    title: "Choose your goals",
-    layout: "list",
-    optionSpacing: "loose",
-    requiresSelection: true,
-    options: [
-      { id: "five-daily", label: "Pray all 5 daily prayers" },
-      { id: "discipline", label: "Build discipline" },
-      { id: "quran", label: "Read Quran daily" },
-      { id: "dhikr", label: "Remember Allah more" },
-    ],
-  },
-  {
     id: "green-hope",
     type: "hope-screen",
     title: "You can change",
@@ -177,6 +164,24 @@ export const ONBOARDING_SETUP_STEPS: OnboardingStep[] = [
     body: "Sign to show up for salah.",
     continueLabel: "Hold to Lock In",
     pastel: "default",
+  },
+  {
+    id: "choose-goals",
+    type: "multi-choice",
+    title: "Choose your goals",
+    layout: "list",
+    optionSpacing: "loose",
+    selectionMode: "multi",
+    requiresSelection: true,
+    options: [
+      { id: "five-daily", label: "Pray all 5 daily prayers" },
+      { id: "discipline", label: "Build discipline" },
+      { id: "quran", label: "Read Quran daily" },
+      { id: "dhikr", label: "Remember Allah more" },
+      { id: "tahajjud", label: "Wake for tahajjud" },
+      { id: "charity", label: "Give charity regularly" },
+      { id: "fasting", label: "Fast Mondays & Thursdays" },
+    ],
   },
   {
     id: "personalized-plan",

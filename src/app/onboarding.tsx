@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
-import { OnboardingDevSkipToPlanButton } from "@/components/onboarding/OnboardingDevSkipToPlanButton";
+import { OnboardingDebugStepChooser } from "@/components/onboarding/OnboardingDebugStepChooser";
 import { OnboardingShell } from "@/components/onboarding/OnboardingShell";
 import { OnboardingStepContent } from "@/components/onboarding/OnboardingStepContent";
+import { OnboardingSlideshowStepHandle } from "@/components/onboarding/steps/OnboardingSlideshowStep";
 import { OnboardingStepCatalog } from "@/features/onboarding/OnboardingStepCatalog";
 import { OnboardingProgressPolicy } from "@/features/onboarding/OnboardingProgressPolicy";
 import { OnboardingSlideshowController } from "@/features/onboarding/OnboardingSlideshowController";
@@ -16,13 +17,11 @@ import { useOnboardingFlow } from "@/features/onboarding/useOnboardingFlow";
 import { useHideTabBar } from "@/features/navigation/useHideTabBar";
 import { useTheme } from "@/core/theme";
 
-const FIRST_ONBOARDING_STEP_ID = "welcome";
-const PERSONALIZED_PLAN_STEP_ID = "personalized-plan";
-
 export default function OnboardingScreen() {
   const theme = useTheme();
   const flow = useOnboardingFlow();
   const step = OnboardingStepCatalog.stepAt(flow.stepIndex);
+  const slideshowRef = useRef<OnboardingSlideshowStepHandle>(null);
   const [calcProgress, setCalcProgress] = useState(0);
   const [slideshowIndex, setSlideshowIndex] = useState(0);
   const [stepInteractionReady, setStepInteractionReady] = useState(true);
@@ -40,6 +39,7 @@ export default function OnboardingScreen() {
   useEffect(() => {
     previousStepIndexRef.current = flow.stepIndex;
   }, [flow.stepIndex]);
+
   useEffect(() => {
     if (step?.type !== "calculation") setCalcProgress(0);
     setSlideshowIndex(0);
@@ -86,15 +86,8 @@ export default function OnboardingScreen() {
       finish();
       return;
     }
-    const moved = flow.goNext();
-    if (__DEV__) {
-      console.info("[Onboarding] advance", {
-        from: flow.stepIndex,
-        stepId: step?.id,
-        moved,
-      });
-    }
-  }, [finish, flow.goNext, flow.stepIndex, flow.totalSteps, step?.id]);
+    flow.goNext();
+  }, [finish, flow.goNext, flow.stepIndex, flow.totalSteps]);
 
   const handleContinue = useCallback(() => {
     if (!step) return;
@@ -112,19 +105,17 @@ export default function OnboardingScreen() {
 
     if (step.type === "slideshow") {
       const slideCount = OnboardingSlideshowController.slideCount(step.slides);
+      const scrolled = slideshowRef.current?.scrollToNext() ?? false;
+      if (scrolled) return;
+
       const currentIndex = OnboardingSlideshowController.clampIndex(
         slideshowIndex,
         slideCount
       );
-      const nextIndex = OnboardingSlideshowController.nextSlideIndex(
-        currentIndex,
-        slideCount
-      );
-      if (nextIndex !== null) {
-        setSlideshowIndex(nextIndex);
+      if (!OnboardingSlideshowController.isLastSlide(currentIndex, slideCount)) {
         return;
       }
-      // Reset before leaving so the next slideshow step never mounts mid-pager.
+
       setSlideshowIndex(0);
       advance();
       return;
@@ -133,12 +124,14 @@ export default function OnboardingScreen() {
     advance();
   }, [advance, flow.answers, flow.setAnswer, slideshowIndex, step]);
 
-  // Temporary/dev convenience: jump from first welcome page to personalized-plan (prepaywall).
-  const handleSkipToPersonalizedPlan = useCallback(() => {
-    setSlideshowIndex(0);
-    setStepInteractionReady(true);
-    flow.goToStepId(PERSONALIZED_PLAN_STEP_ID);
-  }, [flow.goToStepId]);
+  const handleDebugJump = useCallback(
+    (index: number) => {
+      setSlideshowIndex(0);
+      setStepInteractionReady(true);
+      flow.goToIndex(index);
+    },
+    [flow.goToIndex]
+  );
 
   if (!step) {
     return (
@@ -180,14 +173,14 @@ export default function OnboardingScreen() {
         )
       : step.continueLabel;
 
-  const showSkipToPlan =
-    flow.stepIndex === 0 || step.id === FIRST_ONBOARDING_STEP_ID;
-
-  /**
-   * Slideshow keeps a stable step key so the horizontal pager can swipe
-   * without remounting; Continue still scrolls via activeSlideIndex sync.
-   */
   const contentTransitionKey = step.id;
+
+  const centerContent =
+    step.type === "personalized-plan" ||
+    step.type === "missed-graph" ||
+    step.type === "slider" ||
+    step.type === "benefits-graph" ||
+    (step.type === "slideshow" && step.contentPlacement === "center");
 
   return (
     <View style={styles.fill}>
@@ -204,11 +197,7 @@ export default function OnboardingScreen() {
         hideContinue={hideContinue}
         keyboardAvoid={step.type === "name"}
         pinFooterInFlow={pinFooterInFlow}
-        centerContent={
-          step.type === "missed-graph" ||
-          step.type === "personalized-plan" ||
-          (step.type === "slideshow" && step.contentPlacement === "center")
-        }
+        centerContent={centerContent}
         pastel={shellPastel ?? "default"}
         onBack={flow.goBack}
         onContinue={handleContinue}
@@ -220,6 +209,7 @@ export default function OnboardingScreen() {
           onCalculationComplete={advance}
           onCalculationProgress={setCalcProgress}
           slideshowIndex={slideshowIndex}
+          slideshowRef={slideshowRef}
           onActiveSlideChange={setSlideshowIndex}
           onComparisonAnimationComplete={handleInteractionReady}
           onTypingComplete={handleInteractionReady}
@@ -227,9 +217,10 @@ export default function OnboardingScreen() {
           onContinue={handleContinue}
         />
       </OnboardingShell>
-      {showSkipToPlan ? (
-        <OnboardingDevSkipToPlanButton onPress={handleSkipToPersonalizedPlan} />
-      ) : null}
+      <OnboardingDebugStepChooser
+        currentIndex={flow.stepIndex}
+        onJumpToIndex={handleDebugJump}
+      />
     </View>
   );
 }

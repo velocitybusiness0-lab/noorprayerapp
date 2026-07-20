@@ -14,6 +14,7 @@ interface OnboardingFlowState {
   goNext: () => boolean;
   goBack: () => void;
   goToStepId: (stepId: string) => boolean;
+  goToIndex: (index: number) => boolean;
   complete: () => void;
 }
 
@@ -34,7 +35,10 @@ export function useOnboardingFlow(): OnboardingFlowState {
 
     const value = answers[step.id];
     if (step.type === "multi-choice") {
-      return Array.isArray(value) && value.length > 0;
+      if (step.selectionMode === "multi") {
+        return Array.isArray(value) && value.length > 0;
+      }
+      return typeof value === "string" && value.length > 0;
     }
     if (step.type === "slider") {
       return true;
@@ -57,12 +61,17 @@ export function useOnboardingFlow(): OnboardingFlowState {
     setStepIndex((index) => index - 1);
   }, [stepIndex]);
 
+  const goToIndex = useCallback((index: number) => {
+    if (index < 0 || index >= totalSteps) return false;
+    setStepIndex(index);
+    return true;
+  }, [totalSteps]);
+
   const goToStepId = useCallback((stepId: string) => {
     const index = OnboardingStepCatalog.indexOfStepId(stepId);
     if (index < 0) return false;
-    setStepIndex(index);
-    return true;
-  }, []);
+    return goToIndex(index);
+  }, [goToIndex]);
 
   const complete = useCallback(() => {
     onboardingCompletionStore.markComplete(answers);
@@ -78,6 +87,7 @@ export function useOnboardingFlow(): OnboardingFlowState {
     goNext,
     goBack,
     goToStepId,
+    goToIndex,
     complete,
   };
 }

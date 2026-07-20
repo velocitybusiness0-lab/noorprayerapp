@@ -1,10 +1,18 @@
 import React, { useEffect } from "react";
 import { StyleSheet, TextStyle, View } from "react-native";
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withTiming,
+} from "react-native-reanimated";
 import { ONBOARDING_INK } from "@/features/onboarding/OnboardingPastelPalette";
 import { ThemedText } from "@/components/primitives/ThemedText";
 import { useTypingReveal } from "./useTypingReveal";
 
 type TextVariant = "title" | "display" | "body" | "bodyStrong";
+type BodyRevealMode = "typing" | "fade";
 
 interface OnboardingTypingRevealProps {
   title: string;
@@ -14,10 +22,11 @@ interface OnboardingTypingRevealProps {
   titleVariant?: TextVariant;
   titleStyle?: TextStyle;
   bodyStyle?: TextStyle;
+  bodyReveal?: BodyRevealMode;
   onComplete?: () => void;
 }
 
-/** Faith-style quote with a typing reveal and haptic feedback. */
+/** Faith-style quote with typing title and typing or fade-in body. */
 export function OnboardingTypingReveal({
   title,
   body,
@@ -26,16 +35,35 @@ export function OnboardingTypingReveal({
   titleVariant = "title",
   titleStyle,
   bodyStyle,
+  bodyReveal = "typing",
   onComplete,
 }: OnboardingTypingRevealProps) {
-  const { titleText, bodyText, isComplete } = useTypingReveal(title, body);
+  const { titleText, bodyText, isComplete, showBodyFade } = useTypingReveal(
+    title,
+    body,
+    bodyReveal
+  );
+  const bodyOpacity = useSharedValue(bodyReveal === "fade" ? 0 : 1);
 
   useEffect(() => {
     if (isComplete) onComplete?.();
   }, [isComplete, onComplete]);
 
+  useEffect(() => {
+    if (bodyReveal !== "fade" || !showBodyFade) return;
+    bodyOpacity.value = withDelay(
+      80,
+      withTiming(1, { duration: 520, easing: Easing.out(Easing.cubic) })
+    );
+  }, [bodyOpacity, bodyReveal, showBodyFade]);
+
+  const fadeBodyStyle = useAnimatedStyle(() => ({
+    opacity: bodyOpacity.value,
+  }));
+
   const showTitleCursor = titleText.length < title.length;
   const showBodyCursor =
+    bodyReveal === "typing" &&
     Boolean(body) &&
     titleText.length >= title.length &&
     bodyText.length < (body?.length ?? 0);
@@ -50,10 +78,18 @@ export function OnboardingTypingReveal({
         {showTitleCursor ? <ThemedText style={styles.cursor}>|</ThemedText> : null}
       </ThemedText>
       {body ? (
-        <ThemedText variant="body" style={[styles.body, { color: mutedColor }, bodyStyle]}>
-          {bodyText}
-          {showBodyCursor ? <ThemedText style={styles.cursor}>|</ThemedText> : null}
-        </ThemedText>
+        bodyReveal === "fade" ? (
+          <Animated.View style={fadeBodyStyle}>
+            <ThemedText variant="body" style={[styles.body, { color: mutedColor }, bodyStyle]}>
+              {body}
+            </ThemedText>
+          </Animated.View>
+        ) : (
+          <ThemedText variant="body" style={[styles.body, { color: mutedColor }, bodyStyle]}>
+            {bodyText}
+            {showBodyCursor ? <ThemedText style={styles.cursor}>|</ThemedText> : null}
+          </ThemedText>
+        )
       ) : null}
     </View>
   );

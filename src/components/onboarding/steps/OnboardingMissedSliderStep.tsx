@@ -167,12 +167,13 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   center: {
-    flex: 1,
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
     paddingHorizontal: 12,
     width: "100%",
+    paddingTop: 12,
+    paddingBottom: 24,
   },
   value: {
     fontVariant: ["tabular-nums"],

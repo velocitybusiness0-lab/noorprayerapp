@@ -23,6 +23,7 @@ export function OnboardingMessageStep({
       <OnboardingTypingReveal
         title={step.title ?? ""}
         body={step.body}
+        bodyReveal={step.bodyReveal}
         titleStyle={styles.title}
         bodyStyle={styles.body}
         onComplete={onTypingComplete}

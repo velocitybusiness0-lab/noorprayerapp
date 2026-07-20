@@ -86,9 +86,13 @@ export interface OnboardingStep {
   optionsPlacement?: "start" | "center" | "end";
   /** Vertical placement for centered message content. */
   contentPlacement?: "center" | "upper";
+  /** How the body line appears after the title (defaults to typing). */
+  bodyReveal?: "typing" | "fade";
   checks?: string[];
   /** Optional brand mark shown above slideshow content (e.g. Miraj welcome). */
   brandLabel?: string;
+  /** Defaults to single-select for quiz questions; choose-goals uses multi. */
+  selectionMode?: "single" | "multi";
   pastel?: OnboardingPastelTone;
 }
 

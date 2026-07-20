@@ -6,8 +6,10 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
+import { ImpactFeedbackStyle } from "expo-haptics";
 import { useTheme } from "@/core/theme";
 import { ThemedText } from "@/components/primitives/ThemedText";
+import { haptics } from "@/core/haptics/HapticsManager";
 import { ONBOARDING_INK } from "@/features/onboarding/OnboardingPastelPalette";
 import { OnboardingCalculationChecklistProgress } from "@/features/onboarding/OnboardingCalculationChecklistProgress";
 import { OnboardingStep } from "@/features/onboarding/onboarding.types";
@@ -24,7 +26,7 @@ const DEFAULT_DURATION_MS = 6000;
 const QUOTE_INTERVAL_MS = 2000;
 const HEADER_TICK_MS = 50;
 
-/** Plan build with rotating faith quotes, a progress bar, and a timed checklist. */
+/** Plan build with quotes, percentage, haptic milestones, and checklist. */
 export function OnboardingCalculationStep({
   step,
   onComplete,
@@ -36,11 +38,13 @@ export function OnboardingCalculationStep({
   const totalMs = step.calculationDurationMs ?? DEFAULT_DURATION_MS;
   const progress = useSharedValue(0);
   const [quoteIndex, setQuoteIndex] = useState(0);
+  const [percentLabel, setPercentLabel] = useState(0);
   const [checklistStatuses, setChecklistStatuses] = useState(() =>
     new OnboardingCalculationChecklistProgress(tasks.length, totalMs).statusAt(0)
   );
   const onCompleteRef = useRef(onComplete);
   const onHeaderProgressRef = useRef(onHeaderProgress);
+  const completedTasksRef = useRef(0);
 
   const checklistProgress = useMemo(
     () => new OnboardingCalculationChecklistProgress(tasks.length, totalMs),
@@ -55,6 +59,8 @@ export function OnboardingCalculationStep({
   useEffect(() => {
     progress.value = 0;
     setQuoteIndex(0);
+    setPercentLabel(0);
+    completedTasksRef.current = 0;
     setChecklistStatuses(checklistProgress.statusAt(0));
     onHeaderProgressRef.current?.(0);
 
@@ -64,12 +70,19 @@ export function OnboardingCalculationStep({
     const headerTimer = setInterval(() => {
       const elapsed = Date.now() - startedAt;
       const value = Math.min(elapsed / totalMs, 1);
+      setPercentLabel(Math.round(value * 100));
       onHeaderProgressRef.current?.(value);
     }, HEADER_TICK_MS);
 
     const checklistTimer = setInterval(() => {
       const elapsed = Date.now() - startedAt;
-      setChecklistStatuses(checklistProgress.statusAt(elapsed));
+      const statuses = checklistProgress.statusAt(elapsed);
+      const completed = statuses.filter((s) => s === "completed").length;
+      if (completed > completedTasksRef.current) {
+        completedTasksRef.current = completed;
+        haptics.impact(ImpactFeedbackStyle.Light);
+      }
+      setChecklistStatuses(statuses);
     }, OnboardingCalculationChecklistProgress.tickMs);
 
     const quoteTimers = Array.from({ length: quotes.length }, (_, index) => {
@@ -81,6 +94,7 @@ export function OnboardingCalculationStep({
       clearInterval(headerTimer);
       clearInterval(checklistTimer);
       setChecklistStatuses(checklistProgress.statusAt(totalMs));
+      setPercentLabel(100);
       onHeaderProgressRef.current?.(1);
       onCompleteRef.current();
     }, totalMs);
@@ -114,6 +128,9 @@ export function OnboardingCalculationStep({
       )}
 
       <View style={styles.progressBlock}>
+        <ThemedText variant="caption" style={styles.percent}>
+          {percentLabel}%
+        </ThemedText>
         <View style={[styles.track, { backgroundColor: theme.colors.hairline }]}>
           <Animated.View
             style={[styles.fill, { backgroundColor: ONBOARDING_INK }, barStyle]}
@@ -129,13 +146,14 @@ export function OnboardingCalculationStep({
 const styles = StyleSheet.create({
   wrap: {
     flex: 1,
-    justifyContent: "center",
+    justifyContent: "flex-start",
     alignItems: "center",
+    paddingTop: 48,
     paddingHorizontal: 24,
-    gap: 24,
+    gap: 20,
   },
   fallback: {
-    minHeight: 132,
+    minHeight: 120,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -147,6 +165,12 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 320,
     alignItems: "center",
+    gap: 8,
+  },
+  percent: {
+    color: ONBOARDING_INK,
+    opacity: 0.65,
+    fontVariant: ["tabular-nums"],
   },
   track: {
     width: "100%",

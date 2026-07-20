@@ -12,7 +12,7 @@ interface OnboardingCommitmentStepProps {
   onLockIn: () => void;
 }
 
-/** Sign-your-commitment beat — signature stays in memory only. */
+/** Sign-your-commitment beat — brand at top, body centered, hold CTA at bottom. */
 export function OnboardingCommitmentStep({
   step,
   onLockIn,
@@ -28,23 +28,25 @@ export function OnboardingCommitmentStep({
         </ThemedText>
       ) : null}
 
-      <ThemedText variant="heading" style={styles.title}>
-        {step.title}
-      </ThemedText>
-
-      {step.body ? (
-        <ThemedText variant="body" style={styles.body}>
-          {step.body}
+      <View style={styles.center}>
+        <ThemedText variant="heading" style={styles.title}>
+          {step.title}
         </ThemedText>
-      ) : null}
 
-      <View style={styles.padBlock}>
-        <OnboardingSignaturePad onSignatureChange={setHasSignature} />
+        {step.body ? (
+          <ThemedText variant="body" style={styles.body}>
+            {step.body}
+          </ThemedText>
+        ) : null}
+
+        <View style={styles.padBlock}>
+          <OnboardingSignaturePad onSignatureChange={setHasSignature} />
+        </View>
+
+        <ThemedText variant="caption" style={styles.hint}>
+          Sign above · not saved
+        </ThemedText>
       </View>
-
-      <ThemedText variant="caption" style={styles.hint}>
-        Sign above · not saved
-      </ThemedText>
 
       <View style={styles.ctaWrap}>
         <OnboardingHoldToLockInButton
@@ -63,20 +65,30 @@ export function OnboardingCommitmentStep({
 const styles = StyleSheet.create({
   wrap: {
     flex: 1,
-    alignItems: "center",
-    paddingHorizontal: 8,
-    paddingTop: 10,
-    paddingBottom: 12,
+    marginHorizontal: -20,
+    paddingHorizontal: 20,
   },
   brand: {
     color: ONBOARDING_INK,
-    marginBottom: 12,
+    textAlign: "center",
     letterSpacing: 0.4,
+    fontSize: 22,
+    lineHeight: 28,
+    marginBottom: 8,
+    marginTop: 4,
+  },
+  center: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 8,
+    gap: 10,
   },
   title: {
     color: ONBOARDING_INK,
     textAlign: "center",
-    marginBottom: 10,
+    fontSize: 22,
+    lineHeight: 28,
   },
   body: {
     color: ONBOARDING_INK,
@@ -84,20 +96,19 @@ const styles = StyleSheet.create({
     opacity: 0.78,
     lineHeight: 20,
     maxWidth: 300,
-    marginBottom: 18,
   },
   padBlock: {
     width: "100%",
     height: 168,
-    marginBottom: 12,
+    marginTop: 8,
   },
   hint: {
     color: ONBOARDING_INK,
     opacity: 0.55,
     textAlign: "center",
-    marginBottom: 14,
   },
   ctaWrap: {
     width: "100%",
+    paddingTop: 8,
   },
 });

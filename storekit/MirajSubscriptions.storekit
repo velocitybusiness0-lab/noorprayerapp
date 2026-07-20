@@ -1,0 +1,122 @@
+{
+  "identifier" : "MIRAJ_SUBSCRIPTIONS",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_applicationInternalID" : "miraj",
+    "_developerTeamID" : "BU2Z46QKJJ",
+    "_failTransactionsEnabled" : false,
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+
+    ],
+    "_timeRate" : 0
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "MIRAJ_PRO_GROUP",
+      "localizations" : [
+        {
+          "description" : "Miraj Pro subscription plans",
+          "displayName" : "Miraj Pro",
+          "locale" : "en_US"
+        }
+      ],
+      "name" : "Miraj Pro",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "59.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "MIRAJ_PRO_SKU",
+          "introductoryOffer" : {
+            "internalID" : "MIRAJ_PRO_INTRO",
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P7D"
+          },
+          "localizations" : [
+            {
+              "description" : "Full Miraj Pro access with an introductory free trial.",
+              "displayName" : "Feather Pro (Free Trial)",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "Feather",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Feather Pro",
+          "subscriptionGroupID" : "MIRAJ_PRO_GROUP",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "49.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "MIRAJ_FREE_YEARLY_SKU",
+          "introductoryOffer" : {
+            "internalID" : "MIRAJ_FREE_YEARLY_INTRO",
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P3D"
+          },
+          "localizations" : [
+            {
+              "description" : "Annual Miraj Pro access with a 3-day free trial.",
+              "displayName" : "Feather Free",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "Feather.Free",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Feather Free Yearly",
+          "subscriptionGroupID" : "MIRAJ_PRO_GROUP",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "69.99",
+          "familyShareable" : true,
+          "groupNumber" : 3,
+          "internalID" : "MIRAJ_FAMILY_OFFER_SKU",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Annual Miraj Pro for families via App Store Family Sharing.",
+              "displayName" : "Feather Family (Offer)",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "Feather.Family.Offer",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Feather Family Offer",
+          "subscriptionGroupID" : "MIRAJ_PRO_GROUP",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}

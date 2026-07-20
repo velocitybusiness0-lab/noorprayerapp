@@ -70,15 +70,16 @@ export const ONBOARDING_DISCOVERY_STEPS: OnboardingStep[] = [
     type: "message",
     title: "Allah's mercy is greater than your mistakes",
     body: "No matter how many prayers you've missed, today is a chance to start again.",
+    bodyReveal: "fade",
     pastel: "lightBlue",
   },
   {
     id: "future-self",
     type: "comparison",
-    title: "Imagine yourself one year from now:",
+    title: "Imagine yourself one year from now: purpose and discipline",
     comparisonRows: [
-      { positive: "5 daily prayers", negative: "Feeling lost" },
-      { positive: "Purpose and discipline", negative: "Starting over every Monday" },
+      { positive: "5 daily prayers on time", negative: "Feeling lost" },
+      { positive: "Purposeful and disciplined", negative: "Starting over every Monday" },
       { positive: "Consistent habits", negative: "Inconsistent routines" },
     ],
     footer: "Small steps taken consistently can change a life.",
@@ -106,10 +107,10 @@ export const ONBOARDING_DISCOVERY_STEPS: OnboardingStep[] = [
     optionSpacing: "relaxed",
     requiresSelection: true,
     options: [
-      { id: "distractions", label: "Distracted" },
-      { id: "schedule", label: "Bad schedule" },
+      { id: "distractions", label: "Distractions" },
+      { id: "no-time", label: "No time to pray" },
       { id: "laziness", label: "Laziness" },
-      { id: "motivation", label: "Motivation" },
+      { id: "motivation", label: "No motivation" },
     ],
   },
   {

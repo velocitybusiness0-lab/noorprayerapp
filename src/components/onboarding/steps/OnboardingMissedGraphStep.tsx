@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import Animated, {
   Easing,
-  FadeIn,
   useAnimatedStyle,
   useSharedValue,
   withDelay,
@@ -30,14 +29,12 @@ export function OnboardingMissedGraphStep({ step, answers }: OnboardingMissedGra
   const stats = OnboardingStatsCalculator.fromDailyMissed(daily);
   const values = [stats.daily, stats.weekly, stats.monthly, stats.yearly];
   const maxValue = stats.yearly;
-  const [showCopy, setShowCopy] = useState(false);
   const [animationEpoch, setAnimationEpoch] = useState(0);
 
   const yearlyDisplay = useLinearCountUp(stats.yearly, 1000, 100);
   const heroOpacity = useSharedValue(0);
 
   useEffect(() => {
-    setShowCopy(false);
     setAnimationEpoch((epoch) => epoch + 1);
     heroOpacity.value = 0;
     heroOpacity.value = withDelay(
@@ -47,12 +44,6 @@ export function OnboardingMissedGraphStep({ step, answers }: OnboardingMissedGra
         easing: Easing.out(Easing.cubic),
       })
     );
-
-    const timer = setTimeout(
-      () => setShowCopy(true),
-      OnboardingMissedBarAnimationTiming.copyRevealDelayMs
-    );
-    return () => clearTimeout(timer);
   }, [daily, heroOpacity]);
 
   const heroStyle = useAnimatedStyle(() => ({ opacity: heroOpacity.value }));
@@ -98,27 +89,6 @@ export function OnboardingMissedGraphStep({ step, answers }: OnboardingMissedGra
             />
           ))}
         </View>
-
-        <View style={styles.costBlock}>
-          <ThemedText
-            variant="bodyStrong"
-            style={[styles.costTitle, { color: OnboardingMissedGraphTheme.label }]}
-          >
-            {OnboardingMissedImpactCopy.costTitle()}
-          </ThemedText>
-          <View style={styles.subSlot}>
-            {showCopy ? (
-              <Animated.View entering={FadeIn.duration(420).easing(Easing.out(Easing.cubic))}>
-                <ThemedText
-                  variant="body"
-                  style={[styles.costSub, { color: OnboardingMissedGraphTheme.mutedLabel }]}
-                >
-                  {OnboardingMissedImpactCopy.costSub(daily)}
-                </ThemedText>
-              </Animated.View>
-            ) : null}
-          </View>
-        </View>
       </View>
     </ScrollView>
   );
@@ -163,26 +133,5 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 300,
     alignSelf: "center",
-    marginBottom: 40,
-  },
-  costBlock: {
-    alignItems: "center",
-    gap: 10,
-    width: "100%",
-    paddingHorizontal: 12,
-  },
-  costTitle: {
-    textAlign: "center",
-    fontSize: 18,
-  },
-  subSlot: {
-    minHeight: 44,
-    justifyContent: "flex-start",
-    paddingHorizontal: 8,
-  },
-  costSub: {
-    textAlign: "center",
-    lineHeight: 22,
-    fontSize: 15,
   },
 });

@@ -5,19 +5,42 @@ interface TypingRevealResult {
   titleText: string;
   bodyText: string;
   isComplete: boolean;
+  showBodyFade: boolean;
 }
 
-/** Types title then body via OnboardingTypewriter (light haptic ticks). */
-export function useTypingReveal(title: string, body?: string): TypingRevealResult {
+type BodyRevealMode = "typing" | "fade";
+
+/** Types title; body types or fades in after title completes. */
+export function useTypingReveal(
+  title: string,
+  body?: string,
+  bodyReveal: BodyRevealMode = "typing"
+): TypingRevealResult {
   const [titleText, setTitleText] = useState("");
   const [bodyText, setBodyText] = useState("");
   const [isComplete, setIsComplete] = useState(false);
+  const [showBodyFade, setShowBodyFade] = useState(false);
 
   useEffect(() => {
     const typewriter = new OnboardingTypewriter();
 
     const run = async () => {
       setIsComplete(false);
+      setShowBodyFade(false);
+      setBodyText("");
+
+      if (bodyReveal === "fade" && body) {
+        await typewriter.run(title, undefined, {
+          onTitleProgress: setTitleText,
+          onBodyProgress: () => undefined,
+          onComplete: () => {
+            setShowBodyFade(true);
+            setIsComplete(true);
+          },
+        });
+        return;
+      }
+
       await typewriter.run(title, body, {
         onTitleProgress: setTitleText,
         onBodyProgress: setBodyText,
@@ -30,7 +53,7 @@ export function useTypingReveal(title: string, body?: string): TypingRevealResul
     return () => {
       typewriter.cancel();
     };
-  }, [body, title]);
+  }, [body, bodyReveal, title]);
 
-  return { titleText, bodyText, isComplete };
+  return { titleText, bodyText, isComplete, showBodyFade };
 }

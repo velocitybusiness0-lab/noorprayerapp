@@ -29,6 +29,21 @@ const CHOOSE_GOALS_MAP: Record<string, OnboardingGoalConfig> = {
     title: "Remember Allah more",
     target: 1,
   },
+  "fasting": {
+    id: "goal-onboarding-fasting",
+    title: "Fast Mondays & Thursdays",
+    target: 2,
+  },
+  tahajjud: {
+    id: "goal-onboarding-tahajjud",
+    title: "Wake for tahajjud",
+    target: 1,
+  },
+  charity: {
+    id: "goal-onboarding-charity",
+    title: "Give charity regularly",
+    target: 1,
+  },
 };
 
 /** Adds onboarding goal picks into the daily goals list. */

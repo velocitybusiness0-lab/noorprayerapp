@@ -36,9 +36,10 @@ export class OnboardingProgressPolicy {
     return 1;
   }
 
-  /** Hides back on calculation and cinematic narrative beats. */
+  /** Hides back on calculation, cinematic beats, and choose-goals. */
   static shouldShowBack(step: OnboardingStep | null, stepIndex: number): boolean {
     if (stepIndex <= 0 || !step) return false;
+    if (step.id === "choose-goals") return false;
     if (step.type === "calculation") return false;
     if (step.type === "downtrend") return false;
     if (step.type === "slideshow") return false;

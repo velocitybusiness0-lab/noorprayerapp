@@ -5,19 +5,25 @@ export type OnboardingStepTransitionMode = "fade" | "slide";
 export type OnboardingStepTransitionDirection = "forward" | "back";
 
 /**
- * Decides content transition style. Navigating onto a question/options page
- * uses a horizontal slide; every other destination keeps the existing fade.
+ * Reload-style horizontal slide for narrative beats; fade reserved for welcome
+ * and personalized-plan handoff.
  */
 export class OnboardingStepTransitionPolicy {
+  private static readonly fadeOnlyTypes = new Set<OnboardingStepType>([
+    "welcome",
+    "personalized-plan",
+  ]);
+
   static isQuestionStep(type: OnboardingStepType | undefined): boolean {
     return type === "multi-choice";
   }
 
-  /** Slide when the incoming step is a question; otherwise fade. */
+  /** Slide for most steps; fade only on welcome and plan reveal. */
   static modeForIncomingStep(
     type: OnboardingStepType | undefined
   ): OnboardingStepTransitionMode {
-    return this.isQuestionStep(type) ? "slide" : "fade";
+    if (!type || this.fadeOnlyTypes.has(type)) return "fade";
+    return "slide";
   }
 
   static directionForIndexChange(

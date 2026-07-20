@@ -37,10 +37,10 @@ export function OnboardingBenefitsGraphStep({ step }: OnboardingBenefitsGraphSte
 const styles = StyleSheet.create({
   wrap: {
     flex: 1,
-    justifyContent: "flex-start",
-    paddingTop: 28,
-    paddingBottom: 48,
-    gap: 22,
+    justifyContent: "center",
+    paddingTop: 8,
+    paddingBottom: 24,
+    gap: 18,
   },
   title: {
     color: ONBOARDING_INK,

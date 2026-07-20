@@ -1,4 +1,4 @@
-import React from "react";
+import React, { RefObject } from "react";
 import { StyleSheet, View } from "react-native";
 import { ONBOARDING_INK } from "@/features/onboarding/OnboardingPastelPalette";
 import { ThemedText } from "@/components/primitives/ThemedText";
@@ -16,7 +16,10 @@ import { OnboardingMessageStep } from "./steps/OnboardingMessageStep";
 import { OnboardingCalculationStep } from "./steps/OnboardingCalculationStep";
 import { OnboardingDowntrendStep } from "./steps/OnboardingDowntrendStep";
 import { OnboardingHopeScreenStep } from "./steps/OnboardingHopeScreenStep";
-import { OnboardingSlideshowStep } from "./steps/OnboardingSlideshowStep";
+import {
+  OnboardingSlideshowStep,
+  OnboardingSlideshowStepHandle,
+} from "./steps/OnboardingSlideshowStep";
 import { OnboardingStreakStep } from "./steps/OnboardingStreakStep";
 import { OnboardingCommitmentStep } from "./steps/OnboardingCommitmentStep";
 import { OnboardingBenefitsGraphStep } from "./steps/OnboardingBenefitsGraphStep";
@@ -30,6 +33,7 @@ interface OnboardingStepContentProps {
   onCalculationComplete?: () => void;
   onCalculationProgress?: (value: number) => void;
   slideshowIndex?: number;
+  slideshowRef?: RefObject<OnboardingSlideshowStepHandle | null>;
   onActiveSlideChange?: (index: number) => void;
   onComparisonAnimationComplete?: () => void;
   onTypingComplete?: () => void;
@@ -45,6 +49,7 @@ export function OnboardingStepContent({
   onCalculationComplete,
   onCalculationProgress,
   slideshowIndex = 0,
+  slideshowRef,
   onActiveSlideChange,
   onComparisonAnimationComplete,
   onTypingComplete,
@@ -129,6 +134,7 @@ export function OnboardingStepContent({
   if (step.type === "slideshow") {
     return (
       <OnboardingSlideshowStep
+        ref={slideshowRef}
         step={step}
         activeSlideIndex={slideshowIndex}
         onActiveSlideChange={onActiveSlideChange}

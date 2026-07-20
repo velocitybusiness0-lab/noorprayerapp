@@ -2,11 +2,12 @@ import React, { useEffect, useState } from "react";
 import {
   Keyboard,
   Platform,
+  Pressable,
   StyleSheet,
   TextInput,
   View,
 } from "react-native";
-import { useTheme } from "@/core/theme";
+import { ONBOARDING_INK } from "@/features/onboarding/OnboardingPastelPalette";
 import { ThemedText } from "@/components/primitives/ThemedText";
 import { OnboardingNameKeyboardLayoutPolicy } from "@/features/onboarding/OnboardingNameKeyboardLayoutPolicy";
 import { OnboardingStep } from "@/features/onboarding/onboarding.types";
@@ -19,7 +20,13 @@ interface OnboardingNameStepProps {
   onAgeChange: (value: string) => void;
 }
 
-/** Name + age inputs; top-aligns while keyboard is open so both fields stay visible. */
+const FIELD = {
+  backgroundColor: "rgba(0,0,0,0.06)",
+  borderColor: "rgba(61,56,50,0.22)",
+  color: ONBOARDING_INK,
+};
+
+/** Name + age in Reload-style boxes; Continue stays above keyboard via shell. */
 export function OnboardingNameStep({
   step,
   nameValue,
@@ -27,13 +34,7 @@ export function OnboardingNameStep({
   onNameChange,
   onAgeChange,
 }: OnboardingNameStepProps) {
-  const theme = useTheme();
   const [keyboardOpen, setKeyboardOpen] = useState(false);
-  const inputColors = {
-    color: theme.colors.textPrimary,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surface,
-  };
   const compact = keyboardOpen;
   const layout = OnboardingNameKeyboardLayoutPolicy;
 
@@ -51,8 +52,8 @@ export function OnboardingNameStep({
   }, []);
 
   return (
-    <View style={[styles.root, layout.rootStyle(compact)]}>
-      <View style={[styles.center, { gap: layout.fieldGap(compact) }]}>
+    <Pressable style={[styles.root, layout.rootStyle(compact)]} onPress={Keyboard.dismiss}>
+      <View style={[styles.stack, { gap: layout.fieldGap(compact) }]}>
         <ThemedText variant="heading" style={styles.title}>
           {step.title}
         </ThemedText>
@@ -62,78 +63,77 @@ export function OnboardingNameStep({
           </ThemedText>
         ) : null}
 
-        <TextInput
-          value={nameValue}
-          onChangeText={onNameChange}
-          placeholder="Your name"
-          placeholderTextColor={theme.colors.textTertiary}
-          autoFocus
-          autoCapitalize="words"
-          autoCorrect={false}
-          onFocus={() => setKeyboardOpen(true)}
-          style={[
-            styles.input,
-            inputColors,
-            { marginTop: layout.inputMarginTop(compact) },
-          ]}
-        />
+        <View style={[styles.fieldBlock, { marginTop: layout.inputMarginTop(compact) }]}>
+          <ThemedText variant="bodyStrong" style={styles.label}>
+            Name
+          </ThemedText>
+          <TextInput
+            value={nameValue}
+            onChangeText={onNameChange}
+            placeholder="Enter your name"
+            placeholderTextColor="rgba(61,56,50,0.45)"
+            autoFocus
+            autoCapitalize="words"
+            autoCorrect={false}
+            returnKeyType="next"
+            style={[styles.input, FIELD]}
+          />
+        </View>
 
-        <ThemedText
-          variant="bodyStrong"
-          style={[
-            styles.ageLabel,
-            { marginTop: layout.ageLabelMarginTop(compact) },
-          ]}
-        >
-          Age
-        </ThemedText>
-        <TextInput
-          value={ageValue}
-          onChangeText={onAgeChange}
-          placeholder="Your age"
-          placeholderTextColor={theme.colors.textTertiary}
-          keyboardType="number-pad"
-          maxLength={3}
-          onFocus={() => setKeyboardOpen(true)}
-          style={[styles.input, styles.ageInput, inputColors]}
-        />
+        <View style={[styles.fieldBlock, { marginTop: layout.ageLabelMarginTop(compact) }]}>
+          <ThemedText variant="bodyStrong" style={styles.label}>
+            Age
+          </ThemedText>
+          <TextInput
+            value={ageValue}
+            onChangeText={onAgeChange}
+            placeholder="Enter your age"
+            placeholderTextColor="rgba(61,56,50,0.45)"
+            keyboardType="number-pad"
+            maxLength={3}
+            style={[styles.input, FIELD]}
+          />
+        </View>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    alignItems: "center",
-    paddingHorizontal: 24,
-  },
-  center: {
     width: "100%",
-    maxWidth: 320,
-    alignItems: "center",
+    paddingHorizontal: 4,
+  },
+  stack: {
+    width: "100%",
+    maxWidth: 340,
+    alignSelf: "center",
   },
   title: {
     textAlign: "center",
+    color: ONBOARDING_INK,
+    fontSize: 22,
+    lineHeight: 28,
   },
   body: {
     textAlign: "center",
-    marginBottom: 8,
+    marginBottom: 4,
+  },
+  fieldBlock: {
+    width: "100%",
+    gap: 8,
+  },
+  label: {
+    color: ONBOARDING_INK,
+    fontSize: 15,
   },
   input: {
     width: "100%",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 16,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    fontSize: 18,
-    textAlign: "center",
-  },
-  ageLabel: {
-    alignSelf: "stretch",
-    textAlign: "center",
-  },
-  ageInput: {
-    marginTop: 0,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
   },
 });

@@ -9,16 +9,28 @@ import { OnboardingAnswers, OnboardingStep } from "@/features/onboarding/onboard
 interface OnboardingQuestionStepProps {
   step: OnboardingStep;
   answers: OnboardingAnswers;
-  onAnswer: (stepId: string, value: string[]) => void;
+  onAnswer: (stepId: string, value: string | string[]) => void;
 }
 
-/** Multi/single select question with list-style answer rows. */
+function readMultiSelected(
+  answers: OnboardingAnswers,
+  stepId: string
+): string[] {
+  const value = answers[stepId];
+  if (Array.isArray(value)) return value;
+  if (typeof value === "string" && value.length > 0) return [value];
+  return [];
+}
+
+/** Single- or multi-select question with list-style answer rows. */
 export function OnboardingQuestionStep({
   step,
   answers,
   onAnswer,
 }: OnboardingQuestionStepProps) {
-  const selected = (answers[step.id] as string[] | undefined) ?? [];
+  const multi = step.selectionMode === "multi";
+  const selectedIds = readMultiSelected(answers, step.id);
+  const selectedId = selectedIds[0];
 
   return (
     <View style={styles.wrap}>
@@ -33,15 +45,20 @@ export function OnboardingQuestionStep({
       >
         {step.options ? (
           <OnboardingOptionList
-            multi
+            multi={multi}
             options={step.options}
             spacing={step.optionSpacing}
-            selectedIds={selected}
+            selectedId={selectedId}
+            selectedIds={selectedIds}
             onSelect={(id) => {
-              const next = selected.includes(id)
-                ? selected.filter((item) => item !== id)
-                : [...selected, id];
-              onAnswer(step.id, next);
+              if (multi) {
+                const next = selectedIds.includes(id)
+                  ? selectedIds.filter((item) => item !== id)
+                  : [...selectedIds, id];
+                onAnswer(step.id, next);
+                return;
+              }
+              onAnswer(step.id, id);
             }}
           />
         ) : null}
@@ -60,6 +77,8 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 48,
     paddingHorizontal: 8,
+    fontSize: 22,
+    lineHeight: 28,
   },
   options: {
     flex: 1,

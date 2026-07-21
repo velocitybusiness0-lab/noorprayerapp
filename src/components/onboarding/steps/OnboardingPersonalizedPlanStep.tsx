@@ -44,8 +44,6 @@ export function OnboardingPersonalizedPlanStep({
           lead={model.lead}
         />
 
-        <OnboardingPersonalizedPlanDivider compact />
-
         <OnboardingPersonalizedPlanBenefitsSection
           title={model.benefitsTitle}
           subtitle={model.benefitsSubtitle}

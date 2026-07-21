@@ -6,6 +6,7 @@ import { OnboardingPersonalizedPlanBenefitChipRowLayout } from "@/features/onboa
 import { OnboardingPersonalizedPlanTheme as Theme } from "@/features/onboarding/OnboardingPersonalizedPlanTheme";
 import { OnboardingPersonalizedPlanTypography as Type } from "@/features/onboarding/OnboardingPersonalizedPlanTypography";
 import { OnboardingPersonalizedPlanBenefitChipView } from "./OnboardingPersonalizedPlanBenefitChipView";
+import { OnboardingPersonalizedPlanStarsLaurels } from "./OnboardingPersonalizedPlanStarsLaurels";
 
 interface OnboardingPersonalizedPlanBenefitsSectionProps {
   title: string;
@@ -13,7 +14,7 @@ interface OnboardingPersonalizedPlanBenefitsSectionProps {
   chips: readonly PersonalizedPlanBenefitChip[];
 }
 
-/** “Become more consistent…” headline + 2 / 3 / 2 staggered Miraj chips. */
+/** Stars + “Become more consistent…” headline + 2 / 3 / 2 staggered Miraj chips. */
 export function OnboardingPersonalizedPlanBenefitsSection({
   title,
   subtitle,
@@ -23,6 +24,7 @@ export function OnboardingPersonalizedPlanBenefitsSection({
 
   return (
     <View style={styles.wrap}>
+      <OnboardingPersonalizedPlanStarsLaurels width={220} />
       <ThemedText variant="heading" style={styles.title}>
         {title}
       </ThemedText>

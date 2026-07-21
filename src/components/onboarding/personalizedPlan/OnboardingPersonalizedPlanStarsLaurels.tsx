@@ -6,9 +6,9 @@ interface OnboardingPersonalizedPlanStarsLaurelsProps {
   width?: number;
 }
 
-/** Centered stars + laurels graphic under the custom-plan lead. */
+/** Centered stars + laurels graphic above the benefits headline. */
 export function OnboardingPersonalizedPlanStarsLaurels({
-  width = 168,
+  width = 220,
 }: OnboardingPersonalizedPlanStarsLaurelsProps) {
   const height = Math.round(width / Catalog.aspectRatio);
 

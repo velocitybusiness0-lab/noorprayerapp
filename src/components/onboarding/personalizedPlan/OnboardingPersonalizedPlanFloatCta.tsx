@@ -60,7 +60,7 @@ export function OnboardingPersonalizedPlanFloatCta({
 
 /** Scroll padding so legal links stay reachable above the float. */
 export class OnboardingPersonalizedPlanFloatCtaLayout {
-  static readonly scrollBottomPadding = 118;
+  static readonly scrollBottomPadding = 168;
 }
 
 const styles = StyleSheet.create({

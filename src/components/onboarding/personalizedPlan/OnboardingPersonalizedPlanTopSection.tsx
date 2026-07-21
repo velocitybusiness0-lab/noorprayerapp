@@ -4,14 +4,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { ThemedText } from "@/components/primitives/ThemedText";
 import { OnboardingPersonalizedPlanTheme as Theme } from "@/features/onboarding/OnboardingPersonalizedPlanTheme";
 import { OnboardingPersonalizedPlanTypography as Type } from "@/features/onboarding/OnboardingPersonalizedPlanTypography";
-import { OnboardingPersonalizedPlanStarsLaurels } from "./OnboardingPersonalizedPlanStarsLaurels";
 
 interface OnboardingPersonalizedPlanTopSectionProps {
   headline: string;
   lead: string;
 }
 
-/** Checkmark, custom-plan headline, empathy paragraph, stars/laurels. */
+/** Checkmark, custom-plan headline, and short empathy lead. */
 export function OnboardingPersonalizedPlanTopSection({
   headline,
   lead,
@@ -27,7 +26,6 @@ export function OnboardingPersonalizedPlanTopSection({
       <ThemedText variant="body" style={styles.lead}>
         {lead}
       </ThemedText>
-      <OnboardingPersonalizedPlanStarsLaurels width={152} />
     </View>
   );
 }

@@ -44,7 +44,7 @@ export interface PersonalizedPlanSetupField {
 /** Static Miraj copy for the personalized-plan pre-paywall page. */
 export class OnboardingPersonalizedPlanCatalog {
   static readonly lead =
-    "Your custom plan is ready when you are. Miraj walks with you back to salah, one gentle step at a time.";
+    "Your custom plan is ready. Miraj walks with you back to salah.";
 
   static readonly benefitsTitle = "Become more consistent with Miraj";
 
@@ -84,7 +84,7 @@ export class OnboardingPersonalizedPlanCatalog {
     {
       id: "alarms",
       title: "Prayer alarms",
-      description: "Gentle Fajr wake-ups that actually get you up",
+      description: "Gentle alarms for all 5 namazes",
       icon: "alarm-outline",
     },
     {

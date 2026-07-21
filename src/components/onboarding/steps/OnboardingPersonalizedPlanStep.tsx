@@ -50,8 +50,6 @@ export function OnboardingPersonalizedPlanStep({
           chips={model.benefitChips}
         />
 
-        <OnboardingPersonalizedPlanDivider />
-
         <OnboardingPersonalizedPlanSetupSection
           planIncludesTitle={model.planIncludesTitle}
           planIncludesSubheader={model.planIncludesSubheader}

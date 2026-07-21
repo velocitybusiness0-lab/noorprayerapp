@@ -24,7 +24,7 @@ export function OnboardingPersonalizedPlanBenefitsSection({
 
   return (
     <View style={styles.wrap}>
-      <OnboardingPersonalizedPlanStarsLaurels width={220} />
+      <OnboardingPersonalizedPlanStarsLaurels width={268} />
       <ThemedText variant="heading" style={styles.title}>
         {title}
       </ThemedText>

@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
-import { router } from "expo-router";
 import { OnboardingDebugStepChooser } from "@/components/onboarding/OnboardingDebugStepChooser";
 import { OnboardingLightAppearance } from "@/components/onboarding/OnboardingLightAppearance";
 import { OnboardingShell } from "@/components/onboarding/OnboardingShell";
@@ -13,7 +12,8 @@ import { OnboardingNameAnswerKeys } from "@/features/onboarding/OnboardingNameAn
 import { OnboardingContinueInteractionGate } from "@/features/onboarding/OnboardingContinueInteractionGate";
 import { OnboardingFooterVisibilityPolicy } from "@/features/onboarding/OnboardingFooterVisibilityPolicy";
 import { OnboardingStepTransitionPolicy } from "@/features/onboarding/OnboardingStepTransitionPolicy";
-import { onboardingPermissionCoordinator } from "@/features/onboarding/OnboardingPermissionCoordinator";
+import { onboardingCompletionStore } from "@/features/onboarding/OnboardingCompletionStore";
+import { OnboardingPostPaywallNavigator } from "@/features/onboarding/OnboardingPostPaywallNavigator";
 import { useOnboardingFlow } from "@/features/onboarding/useOnboardingFlow";
 import { useHideTabBar } from "@/features/navigation/useHideTabBar";
 import { useTheme } from "@/core/theme";
@@ -31,7 +31,6 @@ export default function OnboardingScreen() {
   const {
     answers,
     canContinue,
-    complete,
     goBack,
     goNext,
     goToIndex,
@@ -91,22 +90,20 @@ export default function OnboardingScreen() {
     setStepInteractionReady(true);
   }, []);
 
-  const finish = useCallback(() => {
-    void onboardingPermissionCoordinator.requestAll().finally(() => {
-      complete();
-      router.replace("/(tabs)");
-    });
-  }, [complete]);
+  const handlePaywallContinue = useCallback(() => {
+    onboardingCompletionStore.saveAnswers(answers);
+    OnboardingPostPaywallNavigator.goToPermissions();
+  }, [answers]);
 
   const advance = useCallback(() => {
     setStepInteractionReady(true);
     const isLast = stepIndex >= totalSteps - 1;
     if (isLast) {
-      finish();
+      // Personalized-plan owns Start my plan → Superwall → permissions.
       return;
     }
     goNext();
-  }, [finish, goNext, stepIndex, totalSteps]);
+  }, [goNext, stepIndex, totalSteps]);
 
   const handleContinue = useCallback(() => {
     if (!step) return;
@@ -242,7 +239,7 @@ export default function OnboardingScreen() {
             onTypingComplete={handleInteractionReady}
             onCommitmentLockIn={advance}
             onPrePaywallTypingComplete={advance}
-            onContinue={handleContinue}
+            onPaywallContinue={handlePaywallContinue}
           />
         </OnboardingShell>
         <OnboardingDebugStepChooser

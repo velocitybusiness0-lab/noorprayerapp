@@ -53,6 +53,9 @@
         {
           "ios": {
             "deploymentTarget": "17.0"
+          },
+          "android": {
+            "minSdkVersion": 24
           }
         }
       ],
@@ -75,6 +78,49 @@
           "cameraPermission": "Miraj uses the camera so you can scan your prayer mat, sink, or the mosque to confirm you are ready for salah."
         }
       ],
+      [
+        "expo-quick-actions",
+        {
+          "iosActions": [
+            {
+              "id": "try_for_free",
+              "title": "Try for free",
+              "subtitle": "Start with limited access",
+              "icon": "favorite",
+              "params": {
+                "href": "/onboarding/try-for-free"
+              }
+            },
+            {
+              "id": "qibla",
+              "title": "Open Qibla",
+              "subtitle": "Find the direction of prayer",
+              "icon": "location",
+              "params": {
+                "href": "/(tabs)/qibla"
+              }
+            },
+            {
+              "id": "prayer_times",
+              "title": "Prayer times",
+              "subtitle": "Today’s timetable",
+              "icon": "time",
+              "params": {
+                "href": "/(tabs)/timetable"
+              }
+            },
+            {
+              "id": "onboarding",
+              "title": "Start onboarding",
+              "subtitle": "Set up Miraj again",
+              "icon": "invitation",
+              "params": {
+                "href": "/onboarding"
+              }
+            }
+          ]
+        }
+      ],
       "@bacons/apple-targets",
       "./plugins/withExcludeIosNativeModules.js",
       "./plugins/withAlarmKitOpenAppIntents.js"
@@ -88,7 +134,9 @@
       },
       "eas": {
         "projectId": "b0c3faaf-4caf-439b-9306-f77e24305c80"
-      }
+      },
+      "superwallIosApiKey": "",
+      "superwallAndroidApiKey": ""
     }
   }
 }

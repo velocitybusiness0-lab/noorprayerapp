@@ -1,15 +1,27 @@
-import { Camera } from "expo-camera";
-import * as Location from "expo-location";
+import { Platform } from "react-native";
+import { alarmManager } from "@/features/alarm/AlarmManager";
 import { notificationManager } from "@/features/notifications/NotificationManager";
 
-/** Requests permissions needed after onboarding setup. */
+export type OnboardingPermissionKind = "notifications" | "alarms";
+
+/** Requests a single onboarding permission and returns whether it was granted. */
 export class OnboardingPermissionCoordinator {
-  async requestAll(): Promise<void> {
-    await Promise.all([
-      notificationManager.configure().then(() => notificationManager.requestPermission()),
-      Location.requestForegroundPermissionsAsync(),
-      Camera.requestCameraPermissionsAsync(),
-    ]);
+  async requestNotifications(): Promise<boolean> {
+    await notificationManager.configure();
+    const status = await notificationManager.requestPermission();
+    return status === "granted";
+  }
+
+  async requestAlarms(): Promise<boolean> {
+    if (Platform.OS !== "ios" || !alarmManager.isSupported) {
+      return true;
+    }
+    return alarmManager.requestAuthorization();
+  }
+
+  async request(kind: OnboardingPermissionKind): Promise<boolean> {
+    if (kind === "notifications") return this.requestNotifications();
+    return this.requestAlarms();
   }
 }
 

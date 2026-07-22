@@ -42,7 +42,7 @@ interface OnboardingStepContentProps {
   onTypingComplete?: () => void;
   onCommitmentLockIn?: () => void;
   onPrePaywallTypingComplete?: () => void;
-  onContinue?: () => void;
+  onPaywallContinue?: () => void;
 }
 
 /** Routes each onboarding step to its focused renderer. */
@@ -59,7 +59,7 @@ export function OnboardingStepContent({
   onTypingComplete,
   onCommitmentLockIn,
   onPrePaywallTypingComplete,
-  onContinue,
+  onPaywallContinue,
 }: OnboardingStepContentProps) {
   if (step.type === "welcome") {
     return <OnboardingWelcomeStep step={step} />;
@@ -204,7 +204,7 @@ export function OnboardingStepContent({
     return (
       <OnboardingPersonalizedPlanStep
         answers={answers}
-        onContinue={() => onContinue?.()}
+        onPaywallContinue={() => onPaywallContinue?.()}
       />
     );
   }

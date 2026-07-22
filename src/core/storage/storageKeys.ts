@@ -28,6 +28,10 @@ export const StorageKeys = {
   motivationPrefs: "motivation.prefs",
   motivationReminderIds: "notifications.motivationReminderIds",
   purposeEbookCompletion: "purposeEbook.completedChapterIds",
+  /** Local entitlement: "none" | "trial" | "active". */
+  subscriptionEntitlement: "subscription.entitlement",
+  /** Soft try-for-free flag (mirrors entitlement === "trial"). */
+  subscriptionTrial: "subscription.trial",
 } as const;
 
 export type StorageKey = (typeof StorageKeys)[keyof typeof StorageKeys];

@@ -53,7 +53,7 @@ export function useAppBootstrap(): void {
     void useHistory.getState().init();
     useDailyGoals.getState().init();
     bootstrapScanDetector();
-    if (alarmManager.isSupported) void alarmManager.requestAuthorization();
+    // AlarmKit authorization is requested on the post-paywall permission page.
   }, []);
 
   useEffect(() => {

@@ -7,12 +7,14 @@ import { PrayerCalculationSettingsSection } from "@/components/settings/PrayerCa
 import { AlarmSoundSettingsSection } from "@/components/settings/AlarmSoundSettingsSection";
 import { DeveloperSettingsSection } from "@/components/settings/DeveloperSettingsSection";
 import { AppSupportSection } from "@/components/settings/AppSupportSection";
+import { SubscriptionSettingsSection } from "@/components/settings/SubscriptionSettingsSection";
 
 export default function SettingsScreen() {
   return (
     <Screen scroll tabBarPadding>
       <ThemedText variant="title">Settings</ThemedText>
 
+      <SubscriptionSettingsSection />
       <AppearanceSettingsSection />
       <PrayerAlertsSettingsSection />
       <PrayerCalculationSettingsSection />

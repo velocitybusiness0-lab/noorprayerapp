@@ -10,9 +10,14 @@ export class OnboardingCompletionStore {
   }
 
   markComplete(answers: OnboardingAnswers): void {
+    this.saveAnswers(answers);
     storage.setBoolean(StorageKeys.onboardingComplete, true);
-    storage.setObject(StorageKeys.onboardingAnswers, answers);
     OnboardingGoalsApplier.apply(answers);
+  }
+
+  /** Persists answers before post-paywall permissions without finishing onboarding. */
+  saveAnswers(answers: OnboardingAnswers): void {
+    storage.setObject(StorageKeys.onboardingAnswers, answers);
   }
 
   loadAnswers(): OnboardingAnswers {

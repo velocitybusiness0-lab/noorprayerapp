@@ -138,8 +138,21 @@ function stripForLocalMainAppOnly(config) {
  * app-group + push entitlements so `expo run:ios --device` works with Xcode
  * automatic signing.
  */
+function applyPublicEnvExtras(config) {
+  config.extra = config.extra ?? {};
+  config.extra.superwallIosApiKey =
+    process.env.EXPO_PUBLIC_SUPERWALL_IOS_API_KEY ??
+    config.extra.superwallIosApiKey ??
+    "";
+  config.extra.superwallAndroidApiKey =
+    process.env.EXPO_PUBLIC_SUPERWALL_ANDROID_API_KEY ??
+    config.extra.superwallAndroidApiKey ??
+    "";
+  return config;
+}
+
 module.exports = () => {
-  const config = structuredClone(base);
+  const config = applyPublicEnvExtras(structuredClone(base));
   const profile = process.env.EAS_BUILD_PROFILE;
 
   if (isLocalMainAppOnlyInstall()) {

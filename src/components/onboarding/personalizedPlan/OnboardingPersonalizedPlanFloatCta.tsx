@@ -12,16 +12,18 @@ import { OnboardingPersonalizedPlanTypography as Type } from "@/features/onboard
 interface OnboardingPersonalizedPlanFloatCtaProps {
   label: string;
   trustLine: string;
+  disabled?: boolean;
   onContinue: () => void;
 }
 
 /**
  * Sage CTA that floats over scroll content near the bottom
- * (not shell-anchored). Trust line sits under the pill.
+ * (not shell-anchored).
  */
 export function OnboardingPersonalizedPlanFloatCta({
   label,
   trustLine,
+  disabled = false,
   onContinue,
 }: OnboardingPersonalizedPlanFloatCtaProps) {
   const insets = useSafeAreaInsets();
@@ -35,15 +37,17 @@ export function OnboardingPersonalizedPlanFloatCta({
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={label}
+        disabled={disabled}
         onPress={() => {
+          if (disabled) return;
           haptics.impact(ImpactFeedbackStyle.Medium);
           onContinue();
         }}
         style={({ pressed }) => [
           styles.cta,
           {
-            opacity: pressed ? 0.94 : 1,
-            transform: [{ scale: pressed ? 0.985 : 1 }],
+            opacity: disabled ? 0.45 : pressed ? 0.94 : 1,
+            transform: [{ scale: pressed && !disabled ? 0.985 : 1 }],
           },
         ]}
       >
@@ -60,7 +64,7 @@ export function OnboardingPersonalizedPlanFloatCta({
 
 /** Scroll padding so legal links stay reachable above the float. */
 export class OnboardingPersonalizedPlanFloatCtaLayout {
-  static readonly scrollBottomPadding = 200;
+  static readonly scrollBottomPadding = 180;
 }
 
 const styles = StyleSheet.create({

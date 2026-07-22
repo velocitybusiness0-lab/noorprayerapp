@@ -10,6 +10,8 @@ import * as SplashScreen from "expo-splash-screen";
 import { lightTheme, ThemeProvider, useTheme } from "@/core/theme";
 import { AppBootstrap } from "@/features/bootstrap/AppBootstrap";
 import { RootErrorBoundary } from "@/features/bootstrap/RootErrorBoundary";
+import { SuperwallRootProvider } from "@/features/subscriptions/SuperwallRootProvider";
+import { useQuickActionsBootstrap } from "@/features/quickActions/useQuickActionsBootstrap";
 
 void SplashScreen.preventAutoHideAsync().catch(() => {
   // Older binaries / Expo Go may not support this.
@@ -21,6 +23,7 @@ export const unstable_settings = {
 
 function RootNavigator() {
   const theme = useTheme();
+  useQuickActionsBootstrap();
 
   useEffect(() => {
     void SplashScreen.hideAsync().catch(() => undefined);
@@ -70,7 +73,9 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <RootErrorBoundary>
           <ThemeProvider>
-            <RootNavigator />
+            <SuperwallRootProvider>
+              <RootNavigator />
+            </SuperwallRootProvider>
           </ThemeProvider>
         </RootErrorBoundary>
       </SafeAreaProvider>

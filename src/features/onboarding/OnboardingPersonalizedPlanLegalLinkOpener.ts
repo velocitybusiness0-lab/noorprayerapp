@@ -1,7 +1,8 @@
 import { Linking } from "react-native";
 import { AppLinks } from "@/core/app/AppLinks";
+import { superwallManager } from "@/features/subscriptions/SuperwallManager";
 
-/** Opens Terms / Privacy URLs; Restore is a no-op stub until billing restore exists. */
+/** Opens Terms / Privacy URLs; Restore uses Superwall when available. */
 export class OnboardingPersonalizedPlanLegalLinkOpener {
   static openTerms(): void {
     void Linking.openURL(AppLinks.termsUrl);
@@ -12,6 +13,6 @@ export class OnboardingPersonalizedPlanLegalLinkOpener {
   }
 
   static restorePurchases(): void {
-    // Stub until StoreKit / Play Billing restore is wired.
+    void superwallManager.restorePurchases();
   }
 }
